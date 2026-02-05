@@ -107,7 +107,7 @@ export async function POST(req) {
         // If now is even 1 second before Start, reject.
         if (nowLab < startTimeLab) {
             return NextResponse.json({
-                success: true, // Handled as error by client logic if valid=false
+                success: false, // Client expects false to show message red
                 valid: false,
                 message: `Too Early. Session starts at ${startTimeLab.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
             });
@@ -115,7 +115,7 @@ export async function POST(req) {
 
         if (nowLab > endTimeLab) {
             return NextResponse.json({
-                success: true,
+                success: false,
                 valid: false,
                 message: `Session Expired. Session ended at ${endTimeLab.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
             });

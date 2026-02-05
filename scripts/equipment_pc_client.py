@@ -208,9 +208,12 @@ class OptirKioskApp:
             data = response.json()
 
             if data.get("success"):
-                self.username = user
-                self.password = pwd
-                self.start_session(data['data']['fullName'])
+                if "data" in data:
+                    self.username = user
+                    self.password = pwd
+                    self.start_session(data['data']['fullName'])
+                else:
+                    self.status_label.config(text="Error: Missing session data", fg="red")
             else:
                 self.status_label.config(text=data.get("message", "Login Failed"), fg="red")
         

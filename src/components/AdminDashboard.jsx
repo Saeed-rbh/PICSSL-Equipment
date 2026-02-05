@@ -162,9 +162,9 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Samples</th>}
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>}
                                     {activeTab === 'training' && <th style={{ padding: '1rem', textAlign: 'left' }}>Department</th>}
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>User / Admin</th>}
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Duration</th>}
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Cost</th>}
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>}
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Login Time</th>}
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Logout Time</th>}
                                     {activeTab !== 'reservations' && activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>}
                                     {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actions</th>}
                                 </tr>
@@ -238,17 +238,22 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                     </tr>
                                 ))}
 
-                                {activeTab === 'logs' && accessLogs.map((item, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                        <td style={{ padding: '1rem' }}>{new Date(item.timestamp).toLocaleString()}</td>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>
-                                            {item.fullName}
-                                            {item.userType === 'admin' && <span style={{ marginLeft: '10px', fontSize: '0.8rem', background: '#2ea043', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>{Math.round(item.durationMinutes)} mins</td>
-                                        <td style={{ padding: '1rem' }}>${item.finalCost}</td>
-                                    </tr>
-                                ))}
+                                {activeTab === 'logs' && accessLogs.map((item, i) => {
+                                    const logoutTime = new Date(item.timestamp);
+                                    const loginTime = new Date(logoutTime.getTime() - (item.durationMinutes * 60000));
+
+                                    return (
+                                        <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>
+                                                {item.fullName}
+                                                {item.userType === 'admin' && <span style={{ marginLeft: '10px', fontSize: '0.8rem', background: '#2ea043', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}
+                                            </td>
+                                            <td style={{ padding: '1rem' }}>{loginTime.toLocaleString()}</td>
+                                            <td style={{ padding: '1rem' }}>{logoutTime.toLocaleString()}</td>
+                                            {/* Empty actions cell to align with header if needed, but header has logic to hide actions for logs */}
+                                        </tr>
+                                    );
+                                })}
 
                                 {((activeTab === 'reservations' && reservations.length === 0) ||
                                     (activeTab === 'analysis' && analysisRequests.length === 0) ||

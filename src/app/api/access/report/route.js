@@ -45,38 +45,50 @@ export async function POST(req) {
 
         const doc = snapshot.docs[0];
         const reservation = doc.data();
-        const duration = parseFloat(durationMinutes);
+        const currentSessionDuration = parseFloat(durationMinutes);
 
-        // Calculate Cost
+        // Cumulative Usage Logic: Read existing or default to 0
+        const existingDuration = parseFloat(reservation.actualDuration || 0);
+        const newTotalDuration = existingDuration + currentSessionDuration;
+
+        // Calculate Total Cost based on Cumulative Duration
         // Rate: $50/hr standard. (User said "no industrial")
-        // If PICSSL Group: $0.
-
-        let finalCost = 0;
+        let totalCost = 0;
+        let sessionCost = 0;
 
         if (reservation.picsslGroup) {
-            finalCost = 0;
+            totalCost = 0;
+            sessionCost = 0;
         } else {
-            const hours = duration / 60;
-            finalCost = hours * 50;
+            // Total Cost
+            const totalHours = newTotalDuration / 60;
+            totalCost = totalHours * 50;
+
+            // Session Cost (for log)
+            const sessionHours = currentSessionDuration / 60;
+            sessionCost = sessionHours * 50;
         }
 
-        // Use toFixed(2) for display but store as number
-        finalCost = Math.round(finalCost * 100) / 100;
+        // Rounding
+        totalCost = Math.round(totalCost * 100) / 100;
+        sessionCost = Math.round(sessionCost * 100) / 100;
 
+        // Update Reservation with TOTALS
         await db.collection('reservations').doc(doc.id).update({
-            actualDuration: duration,
-            finalCost: finalCost,
+            actualDuration: newTotalDuration,
+            finalCost: totalCost,
             usageReportedAt: new Date().toISOString()
         });
 
-        // Log Standard Access
+        // Log Standard Access (Session specific)
         await db.collection('access_logs').add({
             reservationId: doc.id,
             username: reservation.generatedUsername,
             fullName: reservation.fullName,
             userType: 'user',
-            durationMinutes: duration,
-            finalCost: finalCost,
+            durationMinutes: currentSessionDuration,
+            finalCost: sessionCost,
+            totalReservationCost: totalCost,
             timestamp: new Date().toISOString()
         });
 
@@ -84,8 +96,9 @@ export async function POST(req) {
             success: true,
             message: 'Usage reported successfully',
             data: {
-                actualDuration: duration,
-                finalCost: finalCost
+                actualDuration: newTotalDuration,
+                finalCost: totalCost,
+                sessionDuration: currentSessionDuration
             }
         });
 

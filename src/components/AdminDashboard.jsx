@@ -152,19 +152,24 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                             <thead>
                                 <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Date Submitted</th>
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>
+                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Date Submitted</th>}
+                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>}
+
                                     {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Reserved Date</th>}
                                     {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Time Slots</th>}
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Est. Cost</th>
+                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Est. Cost</th>}
+
                                     {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actual Time</th>}
                                     {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Final Price</th>}
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Samples</th>}
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>}
                                     {activeTab === 'training' && <th style={{ padding: '1rem', textAlign: 'left' }}>Department</th>}
+
                                     {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>}
                                     {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Login Time</th>}
                                     {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Logout Time</th>}
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Duration</th>}
+
                                     {activeTab !== 'reservations' && activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>}
                                     {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actions</th>}
                                 </tr>
@@ -250,6 +255,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                             </td>
                                             <td style={{ padding: '1rem' }}>{loginTime.toLocaleString()}</td>
                                             <td style={{ padding: '1rem' }}>{logoutTime.toLocaleString()}</td>
+                                            <td style={{ padding: '1rem' }}>{Math.round(item.durationMinutes)} mins</td>
                                             {/* Empty actions cell to align with header if needed, but header has logic to hide actions for logs */}
                                         </tr>
                                     );
@@ -269,7 +275,8 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                     </div>
                 </div>
 
-                {selectedItem && <DetailsModal item={selectedItem} onClose={() => setSelectedItem(null)} formatDate={formatDate} />}
+
+                {selectedItem && <DetailsModal item={selectedItem} logs={accessLogs} onClose={() => setSelectedItem(null)} formatDate={formatDate} />}
                 {schedulingItem && <ScheduleModal item={schedulingItem} onClose={() => setSchedulingItem(null)} />}
             </main >
         </>
@@ -277,7 +284,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
 }
 
 // Simple Modal using inline styles for speed
-function DetailsModal({ item, onClose, formatDate }) {
+function DetailsModal({ item, logs, onClose, formatDate }) {
     if (!item) return null;
 
     return (
@@ -303,6 +310,46 @@ function DetailsModal({ item, onClose, formatDate }) {
                         );
                     })}
                 </div>
+
+                {/* Session History Section */}
+                {logs && logs.length > 0 && item.collection === undefined && (
+                    // item.collection is undefined for reservations in current structure, or check if item has 'finalCost'
+                    <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '2px solid var(--border-color)' }}>
+                        <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Session History</h3>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                <thead>
+                                    <tr style={{ background: 'var(--bg-secondary)' }}>
+                                        <th style={{ padding: '0.5rem', textAlign: 'left' }}>Login Time</th>
+                                        <th style={{ padding: '0.5rem', textAlign: 'left' }}>Logout Time</th>
+                                        <th style={{ padding: '0.5rem', textAlign: 'left' }}>Duration</th>
+                                        <th style={{ padding: '0.5rem', textAlign: 'left' }}>Session Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {logs.filter(log => log.reservationId === item.id).length > 0 ? (
+                                        logs.filter(log => log.reservationId === item.id).map((log, i) => {
+                                            const logoutTime = new Date(log.timestamp);
+                                            const loginTime = new Date(logoutTime.getTime() - (log.durationMinutes * 60000));
+                                            return (
+                                                <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                                    <td style={{ padding: '0.5rem' }}>{loginTime.toLocaleString()}</td>
+                                                    <td style={{ padding: '0.5rem' }}>{logoutTime.toLocaleString()}</td>
+                                                    <td style={{ padding: '0.5rem' }}>{Math.round(log.durationMinutes)} mins</td>
+                                                    <td style={{ padding: '0.5rem' }}>${log.finalCost || 0}</td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No usage recorded yet.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
                     <button onClick={onClose} style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', cursor: 'pointer' }}>Close</button>

@@ -2,13 +2,150 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import * as ics from 'ics';
 
-export async function POST(request) {
+export async function POST(req) {
     try {
-        const body = await request.json();
+        const body = await req.json();
+
+        // Support both Uppercase (Local) and Lowercase (Firebase App Hosting) env vars
+        const SMTP_HOST = process.env.SMTP_HOST || process.env.smtp_host;
+        const SMTP_PORT = process.env.SMTP_PORT || process.env.smtp_port;
+        const SMTP_USER = process.env.SMTP_USER || process.env.smtp_user;
+        const SMTP_PASS = process.env.SMTP_PASS || process.env.smtp_pass;
+
+        // Configure Transporter (Common for both types)
+        let transporter;
+        if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
+            transporter = nodemailer.createTransport({
+                host: SMTP_HOST,
+                port: parseInt(SMTP_PORT || '587'),
+                secure: false, // true for 465, false for other ports
+                auth: {
+                    user: SMTP_USER,
+                    pass: SMTP_PASS,
+                },
+            });
+        }
+
+        // HANDLE TRAINING REQUEST
+        if (body.type === 'training') {
+            const { fullName, email, department, supervisor, supervisorEmail, costCenter, availability } = body;
+
+            // Email Content
+            const subject = `New Training Request: ${fullName}`;
+            const text = `
+Dear ${fullName},
+
+Thank you for requesting training on the OPTIR system. We have received your request and will contact you shortly to schedule your session.
+
+Here are the details we received:
+
+Applicant: ${fullName}
+Email: ${email}
+Department/Lab: ${department}
+Supervisor: ${supervisor}
+Supervisor Email: ${supervisorEmail}
+
+Payment Information:
+Training Fee: $250 CAD
+Cost Center: ${costCenter || 'N/A'}
+
+Availability/Notes:
+${availability}
+
+Best regards,
+OPTIR Reservation System
+PICSSL Lab
+            `;
+
+            if (transporter) {
+                await transporter.sendMail({
+                    from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
+                    to: ["Arabha@yorku.ca", email, supervisorEmail],
+                    subject: subject,
+                    text: text,
+                });
+                console.log(`Training Request Email sent`);
+            } else {
+                // Mock Log
+                console.log("---------------------------------------------------");
+                console.log("MOCK TRAINING EMAIL (No SMTP Credentials)");
+                console.log(`To: Arabha@yorku.ca, ${email}, ${supervisorEmail}`);
+                console.log(`Subject: ${subject}`);
+                console.log("Body:", text);
+                console.log("---------------------------------------------------");
+            }
+
+            return NextResponse.json({ message: 'Training request sent successfully' });
+        }
+
+        // HANDLE ANALYSIS REQUEST
+        if (body.type === 'analysis') {
+            const { fullName, email, institution, supervisorEmail, sampleCount, sampleDescription, analysisType, estimatedCost, deliveryMethod, costCenter } = body;
+
+            const subject = `New Sample Analysis Request: ${fullName}`;
+            const text = `
+Dear ${fullName},
+
+Thank you for your sample analysis request. We have received your submission and will be expecting your samples.
+
+Request Details:
+----------------
+Applicant: ${fullName}
+Email: ${email}
+Institution: ${institution}
+Supervisor Email: ${supervisorEmail}
+
+Sample Information:
+Count: ${sampleCount}
+Description: ${sampleDescription}
+Desired Analysis: ${analysisType}
+
+Logistics:
+Delivery Method: ${deliveryMethod}
+
+Cost Estimate:
+Estimated Fee: $${estimatedCost} CAD
+Cost Center: ${costCenter || 'N/A'}
+
+Shipping Address (if applicable):
+Reza Rizvi
+4700 Keele St
+Petrie Building Room 002, science store
+Toronto, Ontario M3J 1P3
+Canada
+
+Next Steps:
+Please ensure your samples are labeled clearly. If shipping, include a copy of this email in the package.
+
+Best regards,
+OPTIR Reservation System
+PICSSL Lab
+            `;
+
+            if (transporter) {
+                await transporter.sendMail({
+                    from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
+                    to: ["Arabha@yorku.ca", email, supervisorEmail],
+                    subject: subject,
+                    text: text,
+                });
+                console.log(`Analysis Request Email sent`);
+            } else {
+                console.log("---------------------------------------------------");
+                console.log("MOCK ANALYSIS EMAIL (No SMTP Credentials)");
+                console.log(`To: Arabha@yorku.ca, ${email}, ${supervisorEmail}`);
+                console.log(`Subject: ${subject}`);
+                console.log("Body:", text);
+                console.log("---------------------------------------------------");
+            }
+            return NextResponse.json({ message: 'Analysis request sent successfully' });
+        }
+
+        // HANDLE RESERVATION (Standard Flow)
+        // Default or explicit 'reservation' type
         const { fullName, email, supervisor, supervisorEmail, sampleName, selectedDate, selectedSlots, totalCost } = body;
 
         // 1. Create ICS Event
-        // Parse date "YYYY-MM-DDT..."
         const dateObj = new Date(selectedDate);
         const year = dateObj.getFullYear();
         const month = dateObj.getMonth() + 1;
@@ -39,53 +176,60 @@ export async function POST(request) {
         const { error, value } = ics.createEvent(event);
         if (error) {
             console.error('ICS Generation Error:', error);
-            return NextResponse.json({ message: 'Error generating calendar invite' }, { status: 500 });
+            // We continue without attachment if error, or fail? specific fail is better.
+            // For now, let's log and proceed or throw. Proceeding without ICS might be safer to at least notify.
         }
 
-        // 2. Configure Transporter
-        // NOTE: In production, use real credentials from process.env
-        // For this demo, we will use Ethereal (fake SMTP) OR simply log if no creds are present.
+        const reservationSubject = `Confirmation: OPTIR Reservation - ${selectedDate.split('T')[0]}`;
+        const reservationText = `
+Dear ${fullName},
 
-        let transporter;
-        if (process.env.SMTP_HOST) {
-            transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: process.env.SMTP_PORT || 587,
-                secure: false, // true for 465, false for other ports
-                auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASS,
-                },
-            });
+Your reservation on the OPTIR system has been confirmed.
+
+Details:
+--------
+Date: ${dateObj.toLocaleDateString()}
+Time: ${selectedSlots.join(', ')} (${durationHours} hours)
+Sample: ${sampleName}
+Estimated Cost: $${totalCost} CAD
+
+Supervisor: ${supervisor}
+
+A calendar invitation is attached to this email.
+
+Best regards,
+OPTIR Reservation System
+PICSSL Lab
+        `;
+
+        if (transporter) {
+            const mailOptions = {
+                from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
+                to: [email, supervisorEmail, "Arabha@yorku.ca"],
+                subject: reservationSubject,
+                text: reservationText,
+            };
+
+            if (!error && value) {
+                mailOptions.icalEvent = {
+                    filename: 'reservation.ics',
+                    method: 'request',
+                    content: value
+                };
+            }
+
+            const info = await transporter.sendMail(mailOptions);
+            console.log("Reservation Message sent: %s", info.messageId);
+            return NextResponse.json({ message: 'Email sent successfully', messageId: info.messageId });
         } else {
-            // Mock Transporter
             console.log("---------------------------------------------------");
-            console.log("MOCK EMAIL SENDING (No SMTP Credentials provided)");
-            console.log(`To: ${email}, ${supervisorEmail}, reservations@picssl.yorku.ca, rizvi@yorku.ca`);
-            console.log(`Subject: Confirmation: OPTIR Reservation ${selectedDate}`);
-            console.log("Body:", event.description);
-            console.log("Attachment: reservation.ics generated successfully.");
+            console.log("MOCK RESERVATION EMAIL (No SMTP Credentials)");
+            console.log(`To: ${email}, ${supervisorEmail}, Arabha@yorku.ca`);
+            console.log(`Subject: ${reservationSubject}`);
+            console.log("Body:", reservationText);
             console.log("---------------------------------------------------");
-
-            // Return success immediately for mock
             return NextResponse.json({ message: 'Mock email logged to console', success: true });
         }
-
-        // 3. Send Email
-        const info = await transporter.sendMail({
-            from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>', // sender address
-            to: [email, supervisorEmail, "reservations@picssl.yorku.ca", "rizvi@yorku.ca"], // list of receivers
-            subject: `Confirmation: OPTIR Reservation - ${selectedDate.split('T')[0]}`, // Subject line
-            text: `Your reservation has been confirmed.\n\n${event.description}\n\nPlease find the calendar invite attached.`, // plain text body
-            icalEvent: {
-                filename: 'reservation.ics',
-                method: 'request',
-                content: value
-            }
-        });
-
-        console.log("Message sent: %s", info.messageId);
-        return NextResponse.json({ message: 'Email sent successfully', messageId: info.messageId });
 
     } catch (error) {
         console.error('Email API Error:', error);

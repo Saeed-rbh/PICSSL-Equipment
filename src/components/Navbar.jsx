@@ -1,4 +1,10 @@
+'use client';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 export default function Navbar() {
+    const pathname = usePathname();
+
     const navStyle = {
         padding: '1rem 0',
         borderBottom: '1px solid var(--border-color)',
@@ -26,10 +32,19 @@ export default function Navbar() {
         alignItems: 'center',
     };
 
-    const linkStyle = {
+    const baseLinkStyle = {
         marginLeft: '2rem',
-        color: 'var(--text-secondary)',
         transition: 'color 0.2s',
+        textDecoration: 'none',
+    };
+
+    const getLinkStyle = (path) => {
+        const isActive = pathname === path;
+        return {
+            ...baseLinkStyle,
+            color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+            opacity: isActive ? 1 : 0.7, // Explicitly setting opacity as requested implies "less opacity" for inactive
+        };
     };
 
     return (
@@ -40,12 +55,12 @@ export default function Navbar() {
                     OPTIR<span style={{ color: 'var(--accent-primary)' }}>.</span>
                 </div>
                 <div>
-                    <a href="/" style={{ ...linkStyle, color: 'var(--text-primary)' }}>Home</a>
-                    <a href="/calendar" style={linkStyle}>Calendar</a>
-                    <a href="/reservation" style={linkStyle}>Reserve Instrument</a>
-                    <a href="/sample-request" style={linkStyle}>Request Analysis</a>
-                    <a href="/training" style={linkStyle}>Training</a>
-                    <a href="/about" style={linkStyle}>About</a>
+                    <Link href="/" style={getLinkStyle('/')}>Home</Link>
+                    <Link href="/calendar" style={getLinkStyle('/calendar')}>Calendar</Link>
+                    <Link href="/reservation" style={getLinkStyle('/reservation')}>Reserve Instrument</Link>
+                    <Link href="/sample-request" style={getLinkStyle('/sample-request')}>Request Analysis</Link>
+                    <Link href="/training" style={getLinkStyle('/training')}>Training</Link>
+                    <Link href="/about" style={getLinkStyle('/about')}>About</Link>
                 </div>
             </div>
         </nav>

@@ -409,13 +409,13 @@ export default function ReservationFlow() {
                                             sampleName: formData.sampleName,
                                             selectedDate: selectedDate,
                                             selectedSlots: selectedSlots,
-                                            totalCost: totalCost
+                                            totalCost: totalCost,
+                                            type: 'reservation'
                                         })
                                     });
 
                                     if (response.ok) {
-                                        alert(`Reservation Confirmed for ${selectedDate.toLocaleDateString()}.\n\nConfirmation emails sent to:\n- You (${formData.email})\n- Supervisor (${formData.supervisorEmail})\n- Operator (Reza Rizvi)`);
-                                        window.location.href = '/calendar';
+                                        setStep('success');
                                     } else {
                                         alert('Reservation saved locally, but failed to send email confirmation.');
                                     }
@@ -434,6 +434,23 @@ export default function ReservationFlow() {
                 <div style={{ marginTop: '1.5rem' }}>
                     <Button variant="secondary" onClick={() => setStep('sample-details')}>Back</Button>
                 </div>
+            </div>
+        );
+    }
+
+    if (step === 'success') {
+        return (
+            <div className="card-animate" style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ width: '64px', height: '64px', background: 'rgba(46, 160, 67, 0.15)', color: '#2ea043', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--text-primary)' }}>Reservation Confirmed!</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '2rem' }}>
+                    Your reservation for <strong>{selectedDate?.toLocaleDateString()}</strong> has been confirmed.
+                    <br />
+                    We have sent a calendar invite and confirmation details to <strong>{formData.email}</strong>.
+                </p>
+                <Button href="/calendar">View Calendar</Button>
             </div>
         );
     }

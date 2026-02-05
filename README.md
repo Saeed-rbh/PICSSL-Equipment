@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OPTIR Equipment Access & Reservation System
 
-## Getting Started
+A complete solution for managing lab equipment access, tracking usage, and billing. This system consists of a **Web Portal** for bookings and an **Access Control Client** (Kiosk) running on local equipment PCs.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### For Researchers (Users)
+-   **Equipment Reservation**: Visual calendar to book time slots for instruments.
+-   **Service Requests**: Direct forms to request **Training** or **Sample Analysis** from staff.
+-   **Automated Credentials**: Receive a unique, generated Username & Password for every reservation.
+-   **Usage Tracking**: Pay only for the time you actually use (tracked to the minute).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### For Administrators
+-   **Admin Dashboard**: Central hub to view all Reservations, Training Requests, and Analysis Requests.
+-   **Access Logs**: Detailed history of every login/logout event, including offline usage.
+-   **Cost Management**:
+    -   Automatic cost calculation ($50/hr standard, $0 for PICSSL/Admin).
+    -   Cumulative tracking: Multiple sessions for one reservation are summed up.
+-   **Emergency Control**:
+    -   **Clear Logs**: Ability to flush old access logs.
+    -   **Override**: Admin credentials (`admin`) bypass time checks and lock barriers.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Kiosk Client (PC Lock Screen)
+-   **Security**: Locks the equipment PC until valid credentials are entered.
+-   **Time Enforcement**:
+    -   Prevents login before the booked start time.
+    -   Rejects login after the session expiry.
+-   **Dual Monitor**: Displays status on primary screen and instructions on secondary monitor.
+-   **Offline Mode**:
+    -   **Emergency Entry**: Admin can unlock PC without internet.
+    -   **Data Safety**: Saves usage logs locally if network fails during logout.
+-   **Tamper Protection**: Hides console, blocks Alt+Tab, and prevents closing.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📖 User Guide
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Booking Equipment
+1.  Navigate to the **Reservations** page.
+2.  Select the desired instrument and Date.
+3.  Click available time slots and hit **"Submit Reservation"**.
+4.  **Important**: Note down the **Generated Username & Password** shown in the confirmation popup.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Accessing Equipment
+1.  Approach the locked Equipment PC.
+2.  Enter the **Username** and **Password** from your reservation.
+3.  Click **"Unlock & Start Session"**.
+4.  Work on your experiment.
+    *   *Note: If you are too early or your time has expired, access will be denied.*
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Ending Session
+1.  When finished, click the red **"LOG OUT & LOCK"** button on the timer window.
+2.  Your duration will be recorded, and the total cost updated on the portal.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠️ Admin Guide
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Dashboard Access
+-   Log in to `/admin` to view the dashboard.
+-   **Tabs**: Switch between Reservations, Training, Analysis, and Access Logs.
+
+### Managing Logs
+-   **View History**: Click "View" on any reservation to see a specific breakdown of its session history.
+-   **Clear Logs**: In the "Access Logs" tab, use the "Clear All Logs" button to wipe the history.
+
+### Emergency Override (Kiosk)
+If the internet is down or a user is stuck:
+-   **Username**: `admin`
+-   **Password**: `picssl2026`
+-   *This grants immediate access and bypasses reporting/billing, ensuring instruments are never held hostage by network issues.*
+
+---
+
+## 💻 Installation Guide (Equipment PC)
+
+### Prerequisites
+-   Windows 10/11
+-   Python 3.x installed
+
+### Setup Kiosk Client
+1.  Copy the `equipment_pc_client.pyw` file to the PC.
+2.  **Run on Startup**:
+    -   Press `Win + R`, type `shell:startup`, and press Enter.
+    -   Create a **Shortcut** to `equipment_pc_client.pyw` in this folder.
+3.  **Run**: Double-click the script to lock the screen.
+
+### Troubleshooting
+-   **"Network Failed"**: The client has switched to Offline Mode. Use Admin credentials to unlock.
+-   **"Usage saved locally"**: Internet failed during logout. Check `offline_logs.txt` in the script directory for the usage report.
+-   **Closing the Kiosk**: The app is designed to be unclosable. To close it for maintenance, open Task Manager (`Ctrl+Shift+Esc`) and end the `Python` process.

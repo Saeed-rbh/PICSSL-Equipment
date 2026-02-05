@@ -45,46 +45,35 @@ export async function POST(req) {
 
             // Email Content
             const subject = `New Training Request: ${fullName}`;
-            const text = `
-Dear ${fullName},
-
-Thank you for requesting training on the OPTIR system. We have received your request and will contact you shortly to schedule your session.
-
-Here are the details we received:
-
-Applicant: ${fullName}
-Email: ${email}
-Department/Lab: ${department}
-Supervisor: ${supervisor}
-Supervisor Email: ${supervisorEmail}
-
-Payment Information:
-Training Fee: $250 CAD
-Cost Center: ${costCenter || 'N/A'}
-
-Availability/Notes:
-${availability}
-
-Best regards,
-OPTIR Reservation System
-PICSSL Lab
-            `;
+            const html = `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 20px;">
+                <h2 style="color: #bc0032; border-bottom: 2px solid #bc0032; padding-bottom: 10px;">New Training Request</h2>
+                <p><strong>Applicant:</strong> ${fullName} (${email})</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <tr style="background: #f9f9f9;"><td style="padding: 10px; border: 1px solid #ddd;"><strong>Department</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${department}</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Supervisor</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${supervisor} (${supervisorEmail})</td></tr>
+                    <tr style="background: #f9f9f9;"><td style="padding: 10px; border: 1px solid #ddd;"><strong>Cost Center</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${costCenter || 'N/A'}</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;"><strong>Fee</strong></td><td style="padding: 10px; border: 1px solid #ddd;">$250 CAD</td></tr>
+                    <tr style="background: #f9f9f9;"><td style="padding: 10px; border: 1px solid #ddd;"><strong>Proponent Notes</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${availability}</td></tr>
+                </table>
+                <p style="margin-top: 20px;">We will contact you shortly to schedule your session.</p>
+                <hr>
+                <p style="font-size: 12px; color: #777;">OPTIR Reservation System | PICSSL Lab</p>
+            </div>`;
 
             if (transporter) {
                 await transporter.sendMail({
                     from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
                     to: ["Arabha@yorku.ca", email, supervisorEmail],
                     subject: subject,
-                    text: text,
+                    html: html, // HTML Body
                 });
                 console.log(`Training Request Email sent`);
             } else {
                 // Mock Log
                 console.log("---------------------------------------------------");
-                console.log("MOCK TRAINING EMAIL (No SMTP Credentials)");
-                console.log(`To: Arabha@yorku.ca, ${email}, ${supervisorEmail}`);
-                console.log(`Subject: ${subject}`);
-                console.log("Body:", text);
+                console.log("MOCK TRAINING EMAIL (HTML)");
                 console.log("---------------------------------------------------");
             }
 
@@ -107,59 +96,48 @@ PICSSL Lab
             }
 
             const subject = `New Sample Analysis Request: ${fullName}`;
-            const text = `
-Dear ${fullName},
+            const html = `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 20px;">
+                <h2 style="color: #004c97; border-bottom: 2px solid #004c97; padding-bottom: 10px;">Sample Analysis Request</h2>
+                <p>Thank you for your submission. Please prepare your samples for delivery.</p>
+                
+                <h3 style="background:#eee; padding:5px;">Project Details</h3>
+                <p><strong>Applicant:</strong> ${fullName} (${email})<br>
+                <strong>Supervisor:</strong> ${supervisorEmail}<br>
+                <strong>Institution:</strong> ${institution}</p>
 
-Thank you for your sample analysis request. We have received your submission and will be expecting your samples.
+                <h3 style="background:#eee; padding:5px;">Sample Info</h3>
+                <p><strong>Count:</strong> ${sampleCount}<br>
+                <strong>Type:</strong> ${analysisType}<br>
+                <strong>Description:</strong> ${sampleDescription}</p>
 
-Request Details:
-----------------
-Applicant: ${fullName}
-Email: ${email}
-Institution: ${institution}
-Supervisor Email: ${supervisorEmail}
+                <h3 style="background:#eee; padding:5px;">Logistics</h3>
+                <p><strong>Method:</strong> ${deliveryMethod}<br>
+                <strong>Est. Cost:</strong> $${estimatedCost} CAD<br>
+                <strong>Cost Center:</strong> ${costCenter || 'N/A'}</p>
 
-Sample Information:
-Count: ${sampleCount}
-Description: ${sampleDescription}
-Desired Analysis: ${analysisType}
-
-Logistics:
-Delivery Method: ${deliveryMethod}
-
-Cost Estimate:
-Estimated Fee: $${estimatedCost} CAD
-Cost Center: ${costCenter || 'N/A'}
-
-Shipping Address (if applicable):
-Reza Rizvi
-4700 Keele St
-Petrie Building Room 002, science store
-Toronto, Ontario M3J 1P3
-Canada
-
-Next Steps:
-Please ensure your samples are labeled clearly. If shipping, include a copy of this email in the package.
-
-Best regards,
-OPTIR Reservation System
-PICSSL Lab
-            `;
+                <div style="background: #f9f9d4; padding: 15px; border: 1px solid #e6db55; margin-top: 20px;">
+                    <strong>Shipping Address:</strong><br>
+                    Reza Rizvi<br>
+                    4700 Keele St<br>
+                    Petrie Building Room 002, Science Store<br>
+                    Toronto, Ontario M3J 1P3, Canada
+                </div>
+                <hr>
+                <p style="font-size: 12px; color: #777;">OPTIR Reservation System | PICSSL Lab</p>
+            </div>`;
 
             if (transporter) {
                 await transporter.sendMail({
                     from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
                     to: ["Arabha@yorku.ca", email, supervisorEmail],
                     subject: subject,
-                    text: text,
+                    html: html,
                 });
                 console.log(`Analysis Request Email sent`);
             } else {
                 console.log("---------------------------------------------------");
-                console.log("MOCK ANALYSIS EMAIL (No SMTP Credentials)");
-                console.log(`To: Arabha@yorku.ca, ${email}, ${supervisorEmail}`);
-                console.log(`Subject: ${subject}`);
-                console.log("Body:", text);
+                console.log("MOCK ANALYSIS EMAIL (HTML)");
                 console.log("---------------------------------------------------");
             }
             return NextResponse.json({ message: 'Analysis request sent successfully' });
@@ -222,38 +200,59 @@ PICSSL Lab
         }
 
         const reservationSubject = `Confirmation: OPTIR Reservation - ${selectedDate.split('T')[0]}`;
-        const reservationText = `
-Dear ${fullName},
+        const html = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 0;">
+            <div style="background-color: #e31837; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">Reservation Confirmed</h1>
+            </div>
+            
+            <div style="padding: 20px;">
+                <p>Dear ${fullName},</p>
+                <p>Your session on the <strong>Optical Photothermal IR Spectroscopy</strong> system has been booked.</p>
 
-Your reservation on the OPTIR system has been confirmed.
+                <div style="background-color: #f8f9fa; border-left: 5px solid #e31837; padding: 15px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #333;">Session Credentials</h3>
+                    <p style="margin-bottom: 5px;">Use these to unlock the PC:</p>
+                    <table style="width: 100%;">
+                        <tr><td style="color: #666;">Username:</td><td><strong>${apiUsername}</strong></td></tr>
+                        <tr><td style="color: #666;">Password:</td><td><strong>${apiPassword}</strong></td></tr>
+                    </table>
+                </div>
 
-Details:
---------
-Date: ${dateObj.toLocaleDateString()}
-Time: ${selectedSlots.join(', ')} (${durationHours} hours)
-Sample: ${sampleName}
-Estimated Cost: $${totalCost} CAD
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Date</td>
+                        <td style="padding: 10px;">${dateObj.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Time</td>
+                        <td style="padding: 10px;">${selectedSlots[0]} - ${selectedSlots.length} Hrs</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Sample</td>
+                        <td style="padding: 10px;">${sampleName}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold;">Est. Cost</td>
+                        <td style="padding: 10px;">$${totalCost} CAD</td>
+                    </tr>
+                </table>
 
-System Access Credentials:
---------------------------
-Username: ${apiUsername}
-Password: ${apiPassword}
-
-Supervisor: ${supervisor}
-
-A calendar invitation is attached to this email.
-
-Best regards,
-OPTIR Reservation System
-PICSSL Lab
-        `;
+                <p style="font-size: 14px;"><strong>Supervisor:</strong> ${supervisor}</p>
+                <p>A calendar invitation is attached.</p>
+            </div>
+            <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #666;">
+                OPTIR Reservation System | PICSSL Lab<br>
+                York University
+            </div>
+        </div>`;
 
         if (transporter) {
             const mailOptions = {
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
                 to: [email, supervisorEmail, "Arabha@yorku.ca"],
                 subject: reservationSubject,
-                text: reservationText,
+                html: html, // HTML
             };
 
             if (!error && value) {
@@ -276,10 +275,7 @@ PICSSL Lab
             return NextResponse.json({ message: 'Email sent successfully', messageId: info.messageId });
         } else {
             console.log("---------------------------------------------------");
-            console.log("MOCK RESERVATION EMAIL (No SMTP Credentials)");
-            console.log(`To: ${email}, ${supervisorEmail}, Arabha@yorku.ca`);
-            console.log(`Subject: ${reservationSubject}`);
-            console.log("Body:", reservationText);
+            console.log("MOCK RESERVATION EMAIL (HTML)");
             console.log("---------------------------------------------------");
             return NextResponse.json({ message: 'Mock email logged to console', success: true });
         }

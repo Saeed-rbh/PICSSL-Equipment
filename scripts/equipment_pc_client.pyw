@@ -24,9 +24,6 @@ PAD = 70
 POS_X = PRIMARY_W + SECONDARY_W - WIN_W - PAD + 20
 POS_Y = SECONDARY_H - WIN_H - PAD
 
-POS_X = PRIMARY_W + SECONDARY_W - WIN_W - PAD + 20
-POS_Y = SECONDARY_H - WIN_H - PAD
-
 def hide_console():
     """Hides the parent console window"""
     try:
@@ -80,12 +77,11 @@ class OptirKioskApp:
             except Exception:
                 pass
             
-            # Check every 100ms (50ms might be too interfering)
+            # Check every 100ms
             self.root.after(100, self.enforce_kiosk_focus)
 
     def on_focus_out(self, event):
         """Trigger refocus immediately if we lose focus"""
-        # Only act if the window itself lost focus, not just a widget inside it
         if not self.session_active:
              focused = self.root.focus_get()
              if focused is None:
@@ -204,7 +200,7 @@ class OptirKioskApp:
         self.root.update()
 
         try:
-            response = requests.post(f"{API_BASE_URL}/verify", json={"username": user, "password": pwd}, timeout=10) # Added timeout
+            response = requests.post(f"{API_BASE_URL}/verify", json={"username": user, "password": pwd}, timeout=10)
             data = response.json()
 
             if data.get("success"):

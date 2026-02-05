@@ -60,6 +60,18 @@ export default function AboutPage() {
                                 O-PTIR offers the convenience of a contactless reflection mode technique combined with the quality of FTIR transmission spectra. It allows for spectra collection on thick samples (e.g., 20 µm) with high database match rates for materials like Polystyrene (PS), PET, and PMMA.
                             </p>
                         </div>
+
+                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                            <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>Equipment Manuals</h4>
+                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                <a href="/manuals/mIRage_System_Manual.pdf" download style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'bold' }}>
+                                    <span>📄</span> System Manual
+                                </a>
+                                <a href="/manuals/mIRage_Software_Manual.pdf" download style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 'bold' }}>
+                                    <span>📄</span> Software Manual
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </section>
             </main>

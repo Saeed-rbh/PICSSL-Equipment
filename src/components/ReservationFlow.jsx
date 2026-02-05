@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from './Button';
 import Input from './Input';
 
@@ -21,6 +21,7 @@ export default function ReservationFlow() {
         hazards: '',
         costCenter: '',
         requestOperator: false,
+        isPicsslGroup: false,
     });
 
     // Helper to get days in month
@@ -42,6 +43,8 @@ export default function ReservationFlow() {
     };
 
     const calculateTotal = () => {
+        if (formData.isPicsslGroup) return 0;
+
         const hours = selectedSlots.length;
         const instrumentRate = 50;
         const operatorRate = 40;
@@ -301,6 +304,26 @@ export default function ReservationFlow() {
                             </div>
                         </div>
 
+                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                            <input
+                                type="checkbox"
+                                id="isPicsslGroup"
+                                checked={formData.isPicsslGroup}
+                                onChange={(e) => setFormData({ ...formData, isPicsslGroup: e.target.checked })}
+                                style={{ marginTop: '0.25rem' }}
+                            />
+                            <div>
+                                <label htmlFor="isPicsslGroup" style={{ display: 'block', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: '500' }}>
+                                    I am a member of the PICSSL Group
+                                </label>
+                                {formData.isPicsslGroup && (
+                                    <p style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginTop: '0.25rem' }}>
+                                        Booking is free for PICSSL group members.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
                         <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                             <input
                                 type="checkbox"
@@ -352,33 +375,10 @@ export default function ReservationFlow() {
                 {selectedDate && (
                     <div className="card-animate" style={{ marginTop: '2rem' }}>
                         <h3 style={{ marginBottom: '1rem' }}>Available Slots for {selectedDate.toLocaleDateString()}</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
-                            {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'].map((time) => {
-                                const isSelected = selectedSlots.includes(time);
-                                return (
-                                    <div key={time}
-                                        onClick={() => toggleSlot(time)}
-                                        style={{
-                                            padding: '0.75rem',
-                                            border: `1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                                            borderRadius: 'var(--radius-md)',
-                                            textAlign: 'center',
-                                            cursor: 'pointer',
-                                            background: isSelected ? 'rgba(47, 129, 247, 0.1)' : 'var(--bg-secondary)',
-                                            color: isSelected ? 'var(--accent-primary)' : 'var(--text-primary)',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {time}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            Select multiple slots if needed. Rate: $50/hr (Capped at $250/day).
-                        </p>
+                        <AvailabilityPicker selectedDate={selectedDate} selectedSlots={selectedSlots} toggleSlot={toggleSlot} />
                     </div>
                 )}
+
 
                 {selectedDate && selectedSlots.length > 0 && (
                     <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
@@ -410,6 +410,7 @@ export default function ReservationFlow() {
                                             selectedDate: selectedDate,
                                             selectedSlots: selectedSlots,
                                             totalCost: totalCost,
+                                            isPicsslGroup: formData.isPicsslGroup,
                                             type: 'reservation'
                                         })
                                     });
@@ -456,4 +457,78 @@ export default function ReservationFlow() {
     }
 
     return <div>Unknown Step</div>;
+}
+
+function AvailabilityPicker({ selectedDate, selectedSlots, toggleSlot }) {
+    const [bookedSlots, setBookedSlots] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAvailability = async () => {
+            setLoading(true);
+            try {
+                const res = await fetch('/api/calendar');
+                const data = await res.json();
+                if (data.success) {
+                    // Filter for selected date
+                    const dateStr = selectedDate.toLocaleDateString(); // Needs to match how we save/compare
+                    // Robust comparison using YYYY-MM-DD
+                    const year = selectedDate.getFullYear();
+                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(selectedDate.getDate()).padStart(2, '0');
+                    const targetStr = `${year}-${month}-${day}`;
+
+                    const taken = data.data
+                        .filter(r => r.date && r.date.startsWith(targetStr))
+                        .flatMap(r => r.time);
+
+                    setBookedSlots(taken);
+                }
+            } catch (error) {
+                console.error('Failed to fetch availability', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (selectedDate) fetchAvailability();
+    }, [selectedDate]);
+
+    const allSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
+
+    if (loading) return <div style={{ color: 'var(--text-secondary)' }}>Checking availability...</div>;
+
+    return (
+        <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+                {allSlots.map((time) => {
+                    const isBooked = bookedSlots.includes(time);
+                    const isSelected = selectedSlots.includes(time);
+                    return (
+                        <div key={time}
+                            onClick={() => !isBooked && toggleSlot(time)}
+                            style={{
+                                padding: '0.75rem',
+                                border: `1px solid ${isSelected ? 'var(--accent-primary)' : (isBooked ? 'var(--border-color)' : 'var(--border-color)')}`,
+                                borderRadius: 'var(--radius-md)',
+                                textAlign: 'center',
+                                cursor: isBooked ? 'not-allowed' : 'pointer',
+                                background: isBooked ? 'rgba(0,0,0,0.2)' : (isSelected ? 'rgba(47, 129, 247, 0.1)' : 'var(--bg-secondary)'),
+                                color: isBooked ? 'var(--text-tertiary)' : (isSelected ? 'var(--accent-primary)' : 'var(--text-primary)'),
+                                transition: 'all 0.2s',
+                                textDecoration: isBooked ? 'line-through' : 'none',
+                                opacity: isBooked ? 0.6 : 1
+                            }}
+                            title={isBooked ? 'Already reserved' : 'Available'}
+                        >
+                            {time}
+                        </div>
+                    );
+                })}
+            </div>
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Select multiple slots if needed. Rate: $50/hr (Capped at $250/day).
+            </p>
+        </div>
+    );
 }

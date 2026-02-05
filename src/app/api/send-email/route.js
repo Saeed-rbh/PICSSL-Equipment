@@ -169,10 +169,16 @@ PICSSL Lab
         // Default or explicit 'reservation' type
         const { fullName, email, supervisor, supervisorEmail, sampleName, selectedDate, selectedSlots, totalCost } = body;
 
+        // Generate User Credentials
+        const apiUsername = `optir-${Math.floor(1000 + Math.random() * 9000)}`;
+        const apiPassword = Math.random().toString(36).slice(-8);
+
         // Save to Firestore
         try {
             await db.collection('reservations').add({
                 ...body,
+                generatedUsername: apiUsername,
+                generatedPassword: apiPassword,
                 createdAt: timestamp,
                 status: 'confirmed'
             });
@@ -195,7 +201,7 @@ PICSSL Lab
             duration: { hours: durationHours, minutes: 0 },
             title: `OPTIR Reservation: ${fullName}`,
             description: `Reservation Details:\nUser: ${fullName} (${email})\nSupervisor: ${supervisor} (${supervisorEmail})\nSample: ${sampleName}\nTotal Cost: $${totalCost}\n\nInstrument: Optical Photothermal IR Spectroscopy`,
-            location: 'PICSSL Lab, York University',
+            location: '4700 Keele St, Petrie Building Room 020 - Science Store, Toronto, Ontario M3J 1P3, Canada',
             url: 'http://picssl.yorku.ca',
             geo: { lat: 43.7735, lon: -79.5019 },
             categories: ['Lab Reservation', 'Scientific'],
@@ -228,6 +234,11 @@ Time: ${selectedSlots.join(', ')} (${durationHours} hours)
 Sample: ${sampleName}
 Estimated Cost: $${totalCost} CAD
 
+System Access Credentials:
+--------------------------
+Username: ${apiUsername}
+Password: ${apiPassword}
+
 Supervisor: ${supervisor}
 
 A calendar invitation is attached to this email.
@@ -246,11 +257,18 @@ PICSSL Lab
             };
 
             if (!error && value) {
-                mailOptions.icalEvent = {
-                    filename: 'reservation.ics',
-                    method: 'request',
-                    content: value
-                };
+                // Determine Calendar Name
+                const calName = 'OPTIR Reservation';
+                // Inject X-WR-CALNAME if not present (simple hack)
+                const finalIcs = value.replace('BEGIN:VCALENDAR', `BEGIN:VCALENDAR\nX-WR-CALNAME:${calName}`);
+
+                mailOptions.attachments = [
+                    {
+                        filename: 'invite.ics',
+                        content: finalIcs,
+                        contentType: 'text/calendar; method=REQUEST; charset=UTF-8'
+                    }
+                ];
             }
 
             const info = await transporter.sendMail(mailOptions);

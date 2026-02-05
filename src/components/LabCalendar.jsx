@@ -1,25 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function LabCalendar() {
     const today = new Date();
     const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
     const [selectedDate, setSelectedDate] = useState(null);
 
-    // Mock Data
-    const reservations = [
-        { date: '2026-02-15', time: '09:00', user: 'Dr. Smith' },
-        { date: '2026-02-15', time: '10:00', user: 'Dr. Smith' },
-        { date: '2026-02-15', time: '11:00', user: 'Dr. Smith' },
-        { date: '2026-02-16', time: '14:00', user: 'Jane Doe' },
-        { date: '2026-02-16', time: '15:00', user: 'Jane Doe' },
-        { date: '2026-02-20', time: '09:00', user: 'Operator Maintenance' },
-        { date: '2026-02-20', time: '10:00', user: 'Operator Maintenance' },
-        { date: '2026-02-20', time: '11:00', user: 'Operator Maintenance' },
-        { date: '2026-02-20', time: '12:00', user: 'Operator Maintenance' },
-        { date: '2026-02-20', time: '13:00', user: 'Operator Maintenance' },
-    ];
+    const [reservations, setReservations] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch Data
+
+    useEffect(() => {
+        const fetchReservations = async () => {
+            try {
+                const res = await fetch('/api/calendar');
+                const data = await res.json();
+                if (data.success) {
+                    setReservations(data.data);
+                }
+            } catch (err) {
+                console.error('Failed to load calendar', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchReservations();
+    }, []);
 
     const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
@@ -36,15 +44,25 @@ export default function LabCalendar() {
     };
 
     const getReservationsForDate = (date) => {
-        const dateString = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format mostly
-        // Simple string match for this mock
-        // Let's standardise on constructing the string manually to match mock data format 'YYYY-MM-DD'
+        // Normalize date to YYYY-MM-DD
+        // Note: The date passed in is local time 00:00. 
+        // We match against the ISO string stored in DB (e.g., "2023-10-27T00:00:00.000Z") or just simple string match if we stored raw date string.
+        // In API we stored 'selectedDate' which likely comes from toLocaleDateString() or similar. 
+        // Let's rely on standard comparison:
+
+        const targetDate = date.toLocaleDateString(); // Local format matching what we likely saved? 
+        // Actually, looking at ReservationFlow, we send "selectedDate" object. JSON.stringify converts it to ISO string.
+        // So we need to match the YYYY-MM-DD part of the ISO string.
+
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-        const searchStr = `${year}-${month}-${day}`;
+        const targetStr = `${year}-${month}-${day}`;
 
-        return reservations.filter(r => r.date === searchStr);
+        return reservations.filter(r => {
+            if (!r.date) return false;
+            return r.date.startsWith(targetStr);
+        }).flatMap(r => r.time.map(t => ({ time: t, user: r.user })));
     };
 
     const renderCalendar = () => {
@@ -117,7 +135,7 @@ export default function LabCalendar() {
     };
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start' }}>
             {/* Calendar Side */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -183,7 +201,7 @@ export default function LabCalendar() {
                                         borderLeft: '4px solid var(--accent-primary)'
                                     }}>
                                         <span style={{ fontWeight: 'bold' }}>{res.time}</span>
-                                        <span style={{ color: 'var(--text-secondary)' }}>{res.user}</span>
+                                        <span style={{ color: 'var(--text-secondary)', wordBreak: 'break-word', textAlign: 'right', maxWidth: '60%' }}>{res.user}</span>
                                     </div>
                                 ))}
                             </div>

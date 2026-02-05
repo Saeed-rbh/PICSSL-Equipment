@@ -52,6 +52,23 @@ export default function AdminDashboard({ reservations: initialReservations, trai
         }
     };
 
+    const handleClearLogs = async () => {
+        if (!window.confirm('WARNING: Are you sure you want to DELETE ALL LOGS? This cannot be undone.')) return;
+
+        try {
+            const response = await fetch('/api/admin/clear-logs', { method: 'POST' });
+            if (response.ok) {
+                setAccessLogs([]); // Clear local state
+                alert('All logs have been cleared.');
+            } else {
+                alert('Failed to clear logs.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error clearing logs.');
+        }
+    };
+
     // Calculate Totals
     const totalReservationsCost = reservations.reduce((acc, curr) => acc + (parseFloat(curr.totalCost) || 0), 0);
     const totalAnalysisCost = analysisRequests.reduce((acc, curr) => acc + (parseFloat(curr.estimatedCost) || 0), 0);
@@ -111,6 +128,26 @@ export default function AdminDashboard({ reservations: initialReservations, trai
 
                 {/* Content */}
                 <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+
+                    {activeTab === 'logs' && (
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={handleClearLogs}
+                                style={{
+                                    background: '#da3633',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                Clear All Logs
+                            </button>
+                        </div>
+                    )}
+
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
                             <thead>

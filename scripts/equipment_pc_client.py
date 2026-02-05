@@ -14,10 +14,12 @@ SECONDARY_W = 1920
 SECONDARY_H = 1080
 WIN_W = 300
 WIN_H = 120
-PAD = 20
+WIN_W = 300
+WIN_H = 150 # Increased height for larger button
+PAD = 70 
 
 # Position: Bottom-Right of 2nd Monitor (Assuming 2nd is right of Primary)
-POS_X = PRIMARY_W + SECONDARY_W - WIN_W - PAD
+POS_X = PRIMARY_W + SECONDARY_W - WIN_W - PAD + 20
 POS_Y = SECONDARY_H - WIN_H - PAD
 
 class OptirKioskApp:
@@ -33,6 +35,14 @@ class OptirKioskApp:
         self.session_active = False
 
     def setup_lock_screen(self):
+        # Clean up any existing widgets (previous session)
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Reset conflict flags ensuring clean state
+        self.root.overrideredirect(False)
+        self.root.geometry("") # Reset geometry to default
+
         # Configure full screen / locked mode
         self.root.attributes("-fullscreen", True)
         self.root.attributes("-topmost", True)
@@ -151,7 +161,7 @@ class OptirKioskApp:
 
 
         self.root.attributes("-fullscreen", False)
-        self.root.attributes("-topmost", True) # Keep timer on top
+        self.root.attributes("-topmost", False) # Allow other windows to cover it
         self.root.overrideredirect(True)
         # Position on 2nd monitor bottom-right
         self.root.geometry(f"{WIN_W}x{WIN_H}+{POS_X}+{POS_Y}") 
@@ -166,8 +176,11 @@ class OptirKioskApp:
         self.timer_label = tk.Label(self.root, text="00:00", font=("Courier", 30, "bold"), fg="#58a6ff", bg="#333")
         self.timer_label.pack()
 
-        btn_logout = tk.Button(self.root, text="Log Out & Lock", command=self.logout, bg="red", fg="white", bd=0, padx=10)
-        btn_logout.pack(pady=10)
+        btn_logout = tk.Button(self.root, text="LOG OUT & LOCK", command=self.logout, 
+                               font=("Arial", 12, "bold"), bg="#da3633", fg="white", 
+                               activebackground="#b62324", activeforeground="white",
+                               bd=0, padx=20, pady=10, cursor="hand2")
+        btn_logout.pack(pady=15, fill="x", padx=20)
 
         # Start Clock Loop
         self.update_clock()

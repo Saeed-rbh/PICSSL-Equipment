@@ -113,14 +113,15 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
                                     <th style={{ padding: '1rem', textAlign: 'left' }}>Date Submitted</th>
                                     <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Email</th>
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Cost</th>
                                     {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Reserved Date</th>}
                                     {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Time Slots</th>}
+                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Est. Cost</th>
+                                    {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actual Time</th>}
+                                    {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Final Price</th>}
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Samples</th>}
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>}
                                     {activeTab === 'training' && <th style={{ padding: '1rem', textAlign: 'left' }}>Department</th>}
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>
+                                    {activeTab !== 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>}
                                     <th style={{ padding: '1rem', textAlign: 'left' }}>Actions</th>
                                 </tr>
                             </thead>
@@ -129,11 +130,24 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                     <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                         <td style={{ padding: '1rem' }}>{formatDate(item.createdAt)}</td>
                                         <td style={{ padding: '1rem', fontWeight: 'bold' }}>{item.fullName}</td>
-                                        <td style={{ padding: '1rem' }}>{item.email}</td>
-                                        <td style={{ padding: '1rem', color: 'var(--accent-primary)' }}>${item.totalCost}</td>
                                         <td style={{ padding: '1rem' }}>{new Date(item.selectedDate).toLocaleDateString()}</td>
                                         <td style={{ padding: '1rem' }}>{item.selectedSlots?.join(', ')}</td>
-                                        <td style={{ padding: '1rem' }}>{item.supervisor}</td>
+                                        <td style={{ padding: '1rem', color: 'var(--accent-primary)' }}>${item.totalCost}</td>
+                                        {/* New Columns for Actual Usage */}
+                                        <td style={{ padding: '1rem' }}>
+                                            {item.actualDuration ? (
+                                                <span style={{ color: '#2ea043', fontWeight: 'bold' }}>{Math.round(item.actualDuration)} mins</span>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-tertiary)' }}>-</span>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '1rem' }}>
+                                            {item.finalCost !== undefined ? (
+                                                <span style={{ color: '#2ea043', fontWeight: 'bold' }}>${item.finalCost}</span>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-tertiary)' }}>-</span>
+                                            )}
+                                        </td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button onClick={() => setSelectedItem(item)} style={{ padding: '0.25rem 0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>View</button>

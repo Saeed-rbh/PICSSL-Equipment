@@ -10,6 +10,7 @@ async function getData() {
         const reservationsSnap = await db.collection('reservations').orderBy('createdAt', 'desc').get();
         const trainingSnap = await db.collection('training_requests').orderBy('createdAt', 'desc').get();
         const analysisSnap = await db.collection('analysis_requests').orderBy('createdAt', 'desc').get();
+        const logsSnap = await db.collection('access_logs').orderBy('timestamp', 'desc').limit(100).get(); // Limit mostly for performance
 
         const serialize = (doc) => {
             const data = doc.data();
@@ -20,10 +21,19 @@ async function getData() {
             };
         };
 
+        const serializeLog = (doc) => {
+            const data = doc.data();
+            return {
+                ...data,
+                id: doc.id
+            };
+        };
+
         return {
             reservations: reservationsSnap.docs.map(serialize),
             trainingRequests: trainingSnap.docs.map(serialize),
             analysisRequests: analysisSnap.docs.map(serialize),
+            accessLogs: logsSnap.docs.map(serializeLog)
         };
     } catch (error) {
         console.error("Admin Fetch Error:", error);

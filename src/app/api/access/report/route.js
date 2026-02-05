@@ -7,6 +7,16 @@ export async function POST(req) {
 
         // Admin Override
         if (username === 'admin' && password === 'picssl2026') {
+            // Log Admin Access
+            await db.collection('access_logs').add({
+                username: 'Admin',
+                fullName: 'Administrator',
+                userType: 'admin',
+                durationMinutes: durationMinutes,
+                finalCost: 0,
+                timestamp: new Date().toISOString()
+            });
+
             return NextResponse.json({
                 success: true,
                 message: 'Admin usage reported (No DB update)',
@@ -57,6 +67,17 @@ export async function POST(req) {
             actualDuration: duration,
             finalCost: finalCost,
             usageReportedAt: new Date().toISOString()
+        });
+
+        // Log Standard Access
+        await db.collection('access_logs').add({
+            reservationId: doc.id,
+            username: reservation.generatedUsername,
+            fullName: reservation.fullName,
+            userType: 'user',
+            durationMinutes: duration,
+            finalCost: finalCost,
+            timestamp: new Date().toISOString()
         });
 
         return NextResponse.json({

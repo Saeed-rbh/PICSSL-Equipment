@@ -7,6 +7,19 @@ import threading
 # CONFIGURATION
 API_BASE_URL = "https://picssle-quipment--pic-equipment.us-east4.hosted.app/api/access"  # Update this to your deployed URL
 
+
+# SCREEN CONFIGURATION (Adjust for your specific monitors)
+PRIMARY_W = 1920
+SECONDARY_W = 1920
+SECONDARY_H = 1080
+WIN_W = 300
+WIN_H = 120
+PAD = 20
+
+# Position: Bottom-Right of 2nd Monitor (Assuming 2nd is right of Primary)
+POS_X = PRIMARY_W + SECONDARY_W - WIN_W - PAD
+POS_Y = SECONDARY_H - WIN_H - PAD
+
 class OptirKioskApp:
     def __init__(self, root):
         self.root = root
@@ -28,6 +41,14 @@ class OptirKioskApp:
 
         # Disable Alt+F4 (Soft prevention)
         self.root.protocol("WM_DELETE_WINDOW", lambda: None)
+        
+        # Ensure the root window is updated so we get correct screen dimensions
+        self.root.update_idletasks()
+        
+        # Auto-detect Primary Width for offset
+        # Note: winfo_screenwidth() usually returns the width of the screen the window is on (Primary)
+        current_primary_w = self.root.winfo_screenwidth()
+        print(f"DEBUG: Detected Primary Width: {current_primary_w}")
 
         # UI Elements
         self.frame = tk.Frame(self.root, bg="#161b22", padx=40, pady=40)
@@ -58,6 +79,47 @@ class OptirKioskApp:
         self.entry_pass.delete(0, tk.END)
         self.entry_user.focus()
 
+        # --- SECONDARY MONITOR LOCK SCREEN ---
+        # Create a top-level window for the second monitor
+        self.win2 = tk.Toplevel(self.root)
+        self.win2.title("OPTIR Lock Screen - Monitor 2")
+        
+        # Important: Set geometry BEFORE fullscreen to ensure it lands on the right screen
+        # We use the detected 'current_primary_w' as the X offset
+        geo_string = f"{SECONDARY_W}x{SECONDARY_H}+{current_primary_w}+0"
+        print(f"DEBUG: Setting 2nd Window Geometry: {geo_string}")
+        
+        self.win2.geometry(geo_string)
+        self.win2.overrideredirect(True) # Remove title bar
+        self.win2.configure(bg="black")
+        
+        # Force update to ensure placement
+        self.win2.update()
+        
+        # NOTE: We do NOT use attributes("-fullscreen", True) here because it often 
+        # forces the window back to the primary screen on Windows.
+        # Instead we rely on the geometry moving it to the second screen coordinates.
+
+        
+        # Instructions Frame
+        frame2 = tk.Frame(self.win2, bg="black")
+        frame2.place(relx=0.5, rely=0.5, anchor="center")
+
+        tk.Label(frame2, text="INSTRUCTIONS", font=("Arial", 28, "bold"), fg="white", bg="black").pack(pady=(0, 30))
+
+        instructions = [
+            "1. Reserve a time slot using the OPTIR Web Portal.",
+            "2. Use the credentials provided in your booking to UNLOCK this station.",
+            "3. Your session is timed.",
+            "4. When finished, strictly click 'Log Out' on the timer window.",
+            "5. The system will calculate usage cost based on duration."
+        ]
+
+        for line in instructions:
+            tk.Label(frame2, text=line, font=("Arial", 16), fg="#c9d1d9", bg="black", wraplength=800, justify="left").pack(anchor="w", pady=5)
+
+
+
     def verify_login(self):
         user = self.entry_user.get()
         pwd = self.entry_pass.get()
@@ -83,10 +145,16 @@ class OptirKioskApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
+        # Destroy the secondary lock window if it exists
+        if hasattr(self, 'win2') and self.win2:
+            self.win2.destroy()
+
+
         self.root.attributes("-fullscreen", False)
         self.root.attributes("-topmost", True) # Keep timer on top
         self.root.overrideredirect(True)
-        self.root.geometry("300x120+50+50") # Small window in top-left
+        # Position on 2nd monitor bottom-right
+        self.root.geometry(f"{WIN_W}x{WIN_H}+{POS_X}+{POS_Y}") 
         self.root.configure(bg="#333")
 
         self.start_time = time.time()
@@ -95,7 +163,7 @@ class OptirKioskApp:
         # Session UI
         tk.Label(self.root, text=f"User: {fullname}", fg="white", bg="#333").pack(pady=(10, 5))
         
-        self.timer_label = tk.Label(self.root, text="00:00:00", font=("Courier", 20, "bold"), fg="#58a6ff", bg="#333")
+        self.timer_label = tk.Label(self.root, text="00:00", font=("Courier", 30, "bold"), fg="#58a6ff", bg="#333")
         self.timer_label.pack()
 
         btn_logout = tk.Button(self.root, text="Log Out & Lock", command=self.logout, bg="red", fg="white", bd=0, padx=10)
@@ -109,8 +177,10 @@ class OptirKioskApp:
             elapsed = int(time.time() - self.start_time)
             mins, secs = divmod(elapsed, 60)
             hours, mins = divmod(mins, 60)
-            self.timer_label.config(text=f"{hours:02}:{mins:02}:{secs:02}")
+            # Format: HH:MM
+            self.timer_label.config(text=f"{hours:02}:{mins:02}")
             self.root.after(1000, self.update_clock)
+
 
     def logout(self):
         self.session_active = False

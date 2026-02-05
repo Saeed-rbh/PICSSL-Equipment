@@ -3,18 +3,22 @@
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 
-export default function AdminDashboard({ reservations: initialReservations, trainingRequests: initialTraining, analysisRequests: initialAnalysis }) {
+export default function AdminDashboard({ reservations: initialReservations, trainingRequests: initialTraining, analysisRequests: initialAnalysis, accessLogs: initialLogs }) {
+
     const [activeTab, setActiveTab] = useState('reservations');
     const [reservations, setReservations] = useState(initialReservations);
     const [trainingRequests, setTrainingRequests] = useState(initialTraining);
     const [analysisRequests, setAnalysisRequests] = useState(initialAnalysis);
+    const [accessLogs, setAccessLogs] = useState(initialLogs || []);
     const [selectedItem, setSelectedItem] = useState(null); // For Details Modal
+
     const [schedulingItem, setSchedulingItem] = useState(null); // For Schedule Modal
 
     const tabs = [
         { id: 'reservations', label: 'Instrument Reservations' },
         { id: 'training', label: 'Training Requests' },
         { id: 'analysis', label: 'Analysis Requests' },
+        { id: 'logs', label: 'Access Logs' },
     ];
 
     const formatDate = (timestamp) => {
@@ -121,8 +125,11 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Samples</th>}
                                     {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>}
                                     {activeTab === 'training' && <th style={{ padding: '1rem', textAlign: 'left' }}>Department</th>}
-                                    {activeTab !== 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>}
-                                    <th style={{ padding: '1rem', textAlign: 'left' }}>Actions</th>
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>User / Admin</th>}
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Duration</th>}
+                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Cost</th>}
+                                    {activeTab !== 'reservations' && activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>}
+                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -191,6 +198,18 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                                 <button onClick={() => handleDelete('training_requests', item.id)} style={{ padding: '0.25rem 0.5rem', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>Delete</button>
                                             </div>
                                         </td>
+                                    </tr>
+                                ))}
+
+                                {activeTab === 'logs' && accessLogs.map((item, i) => (
+                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                        <td style={{ padding: '1rem' }}>{new Date(item.timestamp).toLocaleString()}</td>
+                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>
+                                            {item.fullName}
+                                            {item.userType === 'admin' && <span style={{ marginLeft: '10px', fontSize: '0.8rem', background: '#2ea043', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}
+                                        </td>
+                                        <td style={{ padding: '1rem' }}>{Math.round(item.durationMinutes)} mins</td>
+                                        <td style={{ padding: '1rem' }}>${item.finalCost}</td>
                                     </tr>
                                 ))}
 

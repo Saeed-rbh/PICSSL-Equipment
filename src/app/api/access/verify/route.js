@@ -5,6 +5,25 @@ export async function POST(req) {
     try {
         const { username, password } = await req.json();
 
+        // Admin Override
+        if (username === 'admin' && password === 'picssl2026') {
+            return NextResponse.json({
+                success: true,
+                valid: true,
+                isTimeValid: true,
+                message: 'Admin Access Granted',
+                data: {
+                    id: 'admin-session',
+                    fullName: 'Administrator',
+                    email: 'admin@picssl.com',
+                    bookedDate: new Date().toISOString(),
+                    bookedSlots: ['Admin Override'],
+                    picsslGroup: true // Admin is internal
+                }
+            });
+        }
+
+
         if (!username || !password) {
             return NextResponse.json({ success: false, message: 'Missing credentials' }, { status: 400 });
         }

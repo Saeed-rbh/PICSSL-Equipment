@@ -5,6 +5,19 @@ export async function POST(req) {
     try {
         const { username, password, durationMinutes } = await req.json();
 
+        // Admin Override
+        if (username === 'admin' && password === 'picssl2026') {
+            return NextResponse.json({
+                success: true,
+                message: 'Admin usage reported (No DB update)',
+                data: {
+                    actualDuration: durationMinutes,
+                    finalCost: 0
+                }
+            });
+        }
+
+
         if (!username || !password || durationMinutes === undefined) {
             return NextResponse.json({ success: false, message: 'Missing fields' }, { status: 400 });
         }

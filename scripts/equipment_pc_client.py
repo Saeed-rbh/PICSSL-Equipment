@@ -5,7 +5,7 @@ import time
 import threading
 
 # CONFIGURATION
-API_BASE_URL = "http://localhost:3000/api/access"  # Update this to your deployed URL
+API_BASE_URL = "https://picssle-quipment--pic-equipment.us-east4.hosted.app/api/access"  # Update this to your deployed URL
 
 class OptirKioskApp:
     def __init__(self, root):

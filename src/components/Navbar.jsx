@@ -61,6 +61,7 @@ export default function Navbar() {
                     <Link href="/sample-request" style={getLinkStyle('/sample-request')}>Request Analysis</Link>
                     <Link href="/training" style={getLinkStyle('/training')}>Training</Link>
                     <Link href="/about" style={getLinkStyle('/about')}>About</Link>
+                    <Link href="/admin" style={{ ...getLinkStyle('/admin'), color: 'var(--accent-primary)', fontWeight: 'bold' }}>Admin</Link>
                 </div>
             </div>
         </nav>

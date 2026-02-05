@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import * as ics from 'ics';
+import { db } from '@/lib/firebaseAdmin';
 
 export async function POST(req) {
     try {
         const body = await req.json();
+        const timestamp = new Date(); // Common timestamp
 
         // Support both Uppercase (Local) and Lowercase (Firebase App Hosting) env vars
         const SMTP_HOST = process.env.SMTP_HOST || process.env.smtp_host;
@@ -29,6 +31,17 @@ export async function POST(req) {
         // HANDLE TRAINING REQUEST
         if (body.type === 'training') {
             const { fullName, email, department, supervisor, supervisorEmail, costCenter, availability } = body;
+
+            // Save to Firestore
+            try {
+                await db.collection('training_requests').add({
+                    ...body,
+                    createdAt: timestamp,
+                    status: 'pending'
+                });
+            } catch (dbError) {
+                console.error("Firestore Error (Training):", dbError);
+            }
 
             // Email Content
             const subject = `New Training Request: ${fullName}`;
@@ -81,6 +94,17 @@ PICSSL Lab
         // HANDLE ANALYSIS REQUEST
         if (body.type === 'analysis') {
             const { fullName, email, institution, supervisorEmail, sampleCount, sampleDescription, analysisType, estimatedCost, deliveryMethod, costCenter } = body;
+
+            // Save to Firestore
+            try {
+                await db.collection('analysis_requests').add({
+                    ...body,
+                    createdAt: timestamp,
+                    status: 'pending'
+                });
+            } catch (dbError) {
+                console.error("Firestore Error (Analysis):", dbError);
+            }
 
             const subject = `New Sample Analysis Request: ${fullName}`;
             const text = `
@@ -144,6 +168,17 @@ PICSSL Lab
         // HANDLE RESERVATION (Standard Flow)
         // Default or explicit 'reservation' type
         const { fullName, email, supervisor, supervisorEmail, sampleName, selectedDate, selectedSlots, totalCost } = body;
+
+        // Save to Firestore
+        try {
+            await db.collection('reservations').add({
+                ...body,
+                createdAt: timestamp,
+                status: 'confirmed'
+            });
+        } catch (dbError) {
+            console.error("Firestore Error (Reservation):", dbError);
+        }
 
         // 1. Create ICS Event
         const dateObj = new Date(selectedDate);

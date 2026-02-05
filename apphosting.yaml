@@ -1,0 +1,9 @@
+env:
+  - variable: smtp_host
+    value: smtp.gmail.com
+  - variable: smtp_port
+    value: "587"
+  - variable: smtp_user
+    value: picssl.equipment@gmail.com
+  - variable: smtp_pass
+    value: "rrfn fwrm kurh jals"

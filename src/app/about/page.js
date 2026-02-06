@@ -4,7 +4,7 @@ export default function AboutPage() {
     return (
         <>
             <Navbar />
-            <main className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', maxWidth: '800px' }}>
+            <main className="container main-section">
                 <h1 className="title-gradient" style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '2rem' }}>About Us</h1>
 
                 <section style={{ marginBottom: '4rem' }}>
@@ -27,20 +27,21 @@ export default function AboutPage() {
 
                 <section>
                     <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>OPTIR System</h2>
-                    <div style={{ padding: '2rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
-                        <h3 style={{ color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>Optical Photothermal Infrared Spectroscopy (O-PTIR)</h3>
+                    <div className="content-card">
+                        <h3 style={{ color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>mIRage OPTICAL PHOTOTHERMAL INFRARED SPECTROSCOPY (O-PTIR)</h3>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.7', fontSize: '1.1rem' }}>
                             <strong>The Solution:</strong> O-PTIR uses a collinear visible light source to detect IR absorption, which results in non-contact measurement, thus requiring little or no sample preparation before analysis. Since the light "probe" is used to detect the thermal expansion of the sample, the spatial resolution is independent of infrared light and the submicron infrared spatial resolution is reached.
                         </p>
 
-                        <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem' }}>Key Capabilities</h4>
+                        <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>HIGHLIGHTS</h4>
                         <ul style={{ listStyle: 'none', display: 'grid', gap: '0.75rem', marginBottom: '2rem' }}>
                             {[
-                                "Submicron infrared spatial resolution",
-                                "Non-contact measurement",
-                                "Technique not requiring sample preparation",
-                                "Convenience of a contactless reflection technique",
-                                "Quality of the FTIR transmission spectra"
+                                "Sub-micron spatial resolution",
+                                "Non-Contact measurement (far-field)",
+                                "Transmission FTIR quality spectral quality in reflection",
+                                "Live cell imaging in water",
+                                "Little to no sample preparation",
+                                "Simultaneous IR + Raman"
                             ].map((item, i) => (
                                 <li key={i} style={{ display: 'flex', alignItems: 'center' }}>
                                     <span style={{ color: 'var(--accent-primary)', marginRight: '1rem', fontWeight: 'bold' }}>{i + 1}.</span>
@@ -49,9 +50,10 @@ export default function AboutPage() {
                             ))}
                         </ul>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-                            <img src="/optir-resolution.jpg" alt="O-PTIR Resolution vs FTIR" style={{ width: '100%', height: '300px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#fff' }} />
-                            <img src="/optir-schematic.jpg" alt="O-PTIR Schematic" style={{ width: '100%', height: '300px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#fff' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <img src="/mirage-device.png" alt="mIRage OPTIR System" style={{ width: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#fff', padding: '1rem' }} />
+                            <img src="/optir-resolution.jpg" alt="O-PTIR Resolution vs FTIR" style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#fff' }} />
+                            <img src="/optir-schematic.jpg" alt="O-PTIR Schematic" style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: '#fff' }} />
                         </div>
 
                         <div style={{ padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>

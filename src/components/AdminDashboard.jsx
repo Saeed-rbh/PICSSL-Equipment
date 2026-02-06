@@ -78,7 +78,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
     return (
         <>
             <Navbar />
-            <main className="container" style={{ paddingTop: '6rem', paddingBottom: '4rem' }}>
+            <main className="container admin-main">
                 <h1 className="title-gradient" style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>Admin Dashboard</h1>
 
                 {/* Summary Section */}
@@ -105,7 +105,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
@@ -148,56 +148,56 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                         </div>
                     )}
 
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                    {/* Desktop Table View */}
+                    <div className="desktop-only">
+                        <table className="dashboard-table">
                             <thead>
-                                <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}>
-                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Date Submitted</th>}
-                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>}
+                                <tr>
+                                    {activeTab !== 'logs' && <th>Date Submitted</th>}
+                                    {activeTab !== 'logs' && <th>Name</th>}
 
-                                    {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Reserved Date</th>}
-                                    {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Time Slots</th>}
-                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Est. Cost</th>}
+                                    {activeTab === 'reservations' && <th>Reserved Date</th>}
+                                    {activeTab === 'reservations' && <th>Time Slots</th>}
+                                    {activeTab !== 'logs' && <th>Est. Cost</th>}
 
-                                    {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actual Time</th>}
-                                    {activeTab === 'reservations' && <th style={{ padding: '1rem', textAlign: 'left' }}>Final Price</th>}
-                                    {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Samples</th>}
-                                    {activeTab === 'analysis' && <th style={{ padding: '1rem', textAlign: 'left' }}>Type</th>}
-                                    {activeTab === 'training' && <th style={{ padding: '1rem', textAlign: 'left' }}>Department</th>}
+                                    {activeTab === 'reservations' && <th>Actual Time</th>}
+                                    {activeTab === 'reservations' && <th>Final Price</th>}
+                                    {activeTab === 'analysis' && <th>Samples</th>}
+                                    {activeTab === 'analysis' && <th>Type</th>}
+                                    {activeTab === 'training' && <th>Department</th>}
 
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Name</th>}
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Login Time</th>}
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Logout Time</th>}
-                                    {activeTab === 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Duration</th>}
+                                    {activeTab === 'logs' && <th>Name</th>}
+                                    {activeTab === 'logs' && <th>Login Time</th>}
+                                    {activeTab === 'logs' && <th>Logout Time</th>}
+                                    {activeTab === 'logs' && <th>Duration</th>}
 
-                                    {activeTab !== 'reservations' && activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Supervisor</th>}
-                                    {activeTab !== 'logs' && <th style={{ padding: '1rem', textAlign: 'left' }}>Actions</th>}
+                                    {activeTab !== 'reservations' && activeTab !== 'logs' && <th>Supervisor</th>}
+                                    {activeTab !== 'logs' && <th>Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
                                 {activeTab === 'reservations' && reservations.map((item, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                        <td style={{ padding: '1rem' }}>{formatDate(item.createdAt)}</td>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{item.fullName}</td>
-                                        <td style={{ padding: '1rem' }}>{new Date(item.selectedDate).toLocaleDateString()}</td>
-                                        <td style={{ padding: '1rem' }}>{item.selectedSlots?.join(', ')}</td>
-                                        <td style={{ padding: '1rem', color: 'var(--accent-primary)' }}>${item.totalCost}</td>
-                                        {/* New Columns for Actual Usage */}
-                                        <td style={{ padding: '1rem' }}>
+                                    <tr key={i}>
+                                        <td>{formatDate(item.createdAt)}</td>
+                                        <td style={{ fontWeight: 'bold' }}>{item.fullName}</td>
+                                        <td>{new Date(item.selectedDate).toLocaleDateString()}</td>
+                                        <td>{item.selectedSlots?.join(', ')}</td>
+                                        <td style={{ color: 'var(--accent-primary)' }}>${item.totalCost}</td>
+                                        <td>
                                             {item.actualDuration ? (
                                                 <span style={{ color: '#2ea043', fontWeight: 'bold' }}>{Math.round(item.actualDuration)} mins</span>
                                             ) : (
                                                 <span style={{ color: 'var(--text-tertiary)' }}>-</span>
                                             )}
                                         </td>
-                                        <td style={{ padding: '1rem' }}>
+                                        <td>
                                             {item.finalCost !== undefined ? (
                                                 <span style={{ color: '#2ea043', fontWeight: 'bold' }}>${item.finalCost}</span>
                                             ) : (
                                                 <span style={{ color: 'var(--text-tertiary)' }}>-</span>
                                             )}
                                         </td>
-                                        <td style={{ padding: '1rem' }}>
+                                        <td>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button onClick={() => setSelectedItem(item)} style={{ padding: '0.25rem 0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>View</button>
                                                 <button onClick={() => handleDelete('reservations', item.id)} style={{ padding: '0.25rem 0.5rem', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>Delete</button>
@@ -207,15 +207,15 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 ))}
 
                                 {activeTab === 'analysis' && analysisRequests.map((item, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                        <td style={{ padding: '1rem' }}>{formatDate(item.createdAt)}</td>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{item.fullName}</td>
-                                        <td style={{ padding: '1rem' }}>{item.email}</td>
-                                        <td style={{ padding: '1rem', color: 'var(--accent-primary)' }}>${item.estimatedCost}</td>
-                                        <td style={{ padding: '1rem' }}>{item.sampleCount}</td>
-                                        <td style={{ padding: '1rem' }}>{item.analysisType}</td>
-                                        <td style={{ padding: '1rem' }}>{item.supervisorEmail}</td>
-                                        <td style={{ padding: '1rem' }}>
+                                    <tr key={i}>
+                                        <td>{formatDate(item.createdAt)}</td>
+                                        <td style={{ fontWeight: 'bold' }}>{item.fullName}</td>
+                                        <td>{item.email}</td>
+                                        <td style={{ color: 'var(--accent-primary)' }}>${item.estimatedCost}</td>
+                                        <td>{item.sampleCount}</td>
+                                        <td>{item.analysisType}</td>
+                                        <td>{item.supervisorEmail}</td>
+                                        <td>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button onClick={() => setSelectedItem(item)} style={{ padding: '0.25rem 0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>View</button>
                                                 <button onClick={() => setSchedulingItem({ collection: 'analysis_requests', ...item })} style={{ padding: '0.25rem 0.5rem', background: 'rgba(46, 160, 67, 0.15)', border: '1px solid rgba(46, 160, 67, 0.3)', borderRadius: '4px', cursor: 'pointer', color: '#2ea043' }}>Schedule</button>
@@ -226,14 +226,14 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 ))}
 
                                 {activeTab === 'training' && trainingRequests.map((item, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                        <td style={{ padding: '1rem' }}>{formatDate(item.createdAt)}</td>
-                                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>{item.fullName}</td>
-                                        <td style={{ padding: '1rem' }}>{item.email}</td>
-                                        <td style={{ padding: '1rem' }}>$250</td>
-                                        <td style={{ padding: '1rem' }}>{item.department}</td>
-                                        <td style={{ padding: '1rem' }}>{item.supervisor}</td>
-                                        <td style={{ padding: '1rem' }}>
+                                    <tr key={i}>
+                                        <td>{formatDate(item.createdAt)}</td>
+                                        <td style={{ fontWeight: 'bold' }}>{item.fullName}</td>
+                                        <td>{item.email}</td>
+                                        <td>$250</td>
+                                        <td>{item.department}</td>
+                                        <td>{item.supervisor}</td>
+                                        <td>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button onClick={() => setSelectedItem(item)} style={{ padding: '0.25rem 0.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>View</button>
                                                 <button onClick={() => setSchedulingItem({ collection: 'training_requests', ...item })} style={{ padding: '0.25rem 0.5rem', background: 'rgba(46, 160, 67, 0.15)', border: '1px solid rgba(46, 160, 67, 0.3)', borderRadius: '4px', cursor: 'pointer', color: '#2ea043' }}>Schedule</button>
@@ -246,17 +246,15 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 {activeTab === 'logs' && accessLogs.map((item, i) => {
                                     const logoutTime = new Date(item.timestamp);
                                     const loginTime = new Date(logoutTime.getTime() - (item.durationMinutes * 60000));
-
                                     return (
-                                        <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>
+                                        <tr key={i}>
+                                            <td style={{ fontWeight: 'bold' }}>
                                                 {item.fullName}
                                                 {item.userType === 'admin' && <span style={{ marginLeft: '10px', fontSize: '0.8rem', background: '#2ea043', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}
                                             </td>
-                                            <td style={{ padding: '1rem' }}>{loginTime.toLocaleString()}</td>
-                                            <td style={{ padding: '1rem' }}>{logoutTime.toLocaleString()}</td>
-                                            <td style={{ padding: '1rem' }}>{Math.round(item.durationMinutes)} mins</td>
-                                            {/* Empty actions cell to align with header if needed, but header has logic to hide actions for logs */}
+                                            <td>{loginTime.toLocaleString()}</td>
+                                            <td>{logoutTime.toLocaleString()}</td>
+                                            <td>{Math.round(item.durationMinutes)} mins</td>
                                         </tr>
                                     );
                                 })}
@@ -272,6 +270,109 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                     )}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="mobile-only" style={{ padding: '1rem' }}>
+                        {activeTab === 'reservations' && reservations.map((item, i) => (
+                            <div key={i} className="dashboard-card">
+                                <div className="dashboard-card-row">
+                                    <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{item.fullName}</span>
+                                    <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>${item.totalCost}</span>
+                                </div>
+                                <div className="dashboard-card-row">
+                                    <span className="dashboard-card-label">Date:</span>
+                                    <span>{new Date(item.selectedDate).toLocaleDateString()}</span>
+                                </div>
+                                <div className="dashboard-card-row">
+                                    <span className="dashboard-card-label">Slots:</span>
+                                    <span>{item.selectedSlots?.join(', ')}</span>
+                                </div>
+                                {item.actualDuration && (
+                                    <div className="dashboard-card-row">
+                                        <span className="dashboard-card-label">Actual Usage:</span>
+                                        <span style={{ color: '#2ea043' }}>{Math.round(item.actualDuration)} mins (${item.finalCost})</span>
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', justifyContent: 'flex-end' }}>
+                                    <button onClick={() => setSelectedItem(item)} style={{ padding: '0.5rem 1rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)', flex: 1 }}>View Details</button>
+                                    <button onClick={() => handleDelete('reservations', item.id)} style={{ padding: '0.5rem', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {activeTab === 'analysis' && analysisRequests.map((item, i) => (
+                            <div key={i} className="dashboard-card">
+                                <div className="dashboard-card-row">
+                                    <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{item.fullName}</span>
+                                    <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>${item.estimatedCost}</span>
+                                </div>
+                                <div className="dashboard-card-row">
+                                    <span className="dashboard-card-label">Samples:</span>
+                                    <span>{item.sampleCount}</span>
+                                </div>
+                                <div className="dashboard-card-row" style={{ alignItems: 'flex-start' }}>
+                                    <span className="dashboard-card-label">Type:</span>
+                                    <span style={{ textAlign: 'right', maxWidth: '60%' }}>{item.analysisType}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    <button onClick={() => setSelectedItem(item)} style={{ padding: '0.5rem 1rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)', flex: 1 }}>View</button>
+                                    <button onClick={() => setSchedulingItem({ collection: 'analysis_requests', ...item })} style={{ padding: '0.5rem 1rem', background: 'rgba(46, 160, 67, 0.15)', border: '1px solid rgba(46, 160, 67, 0.3)', borderRadius: '4px', cursor: 'pointer', color: '#2ea043', flex: 1 }}>Schedule</button>
+                                    <button onClick={() => handleDelete('analysis_requests', item.id)} style={{ padding: '0.5rem', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {activeTab === 'training' && trainingRequests.map((item, i) => (
+                            <div key={i} className="dashboard-card">
+                                <div className="dashboard-card-row">
+                                    <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{item.fullName}</span>
+                                    <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>$250</span>
+                                </div>
+                                <div className="dashboard-card-row">
+                                    <span className="dashboard-card-label">Department:</span>
+                                    <span>{item.department}</span>
+                                </div>
+                                <div className="dashboard-card-row">
+                                    <span className="dashboard-card-label">Supervisor:</span>
+                                    <span>{item.supervisor}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                    <button onClick={() => setSelectedItem(item)} style={{ padding: '0.5rem 1rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)', flex: 1 }}>View</button>
+                                    <button onClick={() => setSchedulingItem({ collection: 'training_requests', ...item })} style={{ padding: '0.5rem 1rem', background: 'rgba(46, 160, 67, 0.15)', border: '1px solid rgba(46, 160, 67, 0.3)', borderRadius: '4px', cursor: 'pointer', color: '#2ea043', flex: 1 }}>Schedule</button>
+                                    <button onClick={() => handleDelete('training_requests', item.id)} style={{ padding: '0.5rem', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: '4px', cursor: 'pointer', color: 'var(--text-primary)' }}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {activeTab === 'logs' && accessLogs.map((item, i) => {
+                            const logoutTime = new Date(item.timestamp);
+                            const loginTime = new Date(logoutTime.getTime() - (item.durationMinutes * 60000));
+                            return (
+                                <div key={i} className="dashboard-card">
+                                    <div className="dashboard-card-row">
+                                        <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{item.fullName}</span>
+                                        {item.userType === 'admin' && <span style={{ fontSize: '0.7rem', background: '#2ea043', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>}
+                                    </div>
+                                    <div className="dashboard-card-row">
+                                        <span className="dashboard-card-label">Duration:</span>
+                                        <span>{Math.round(item.durationMinutes)} mins</span>
+                                    </div>
+                                    <div className="dashboard-card-row">
+                                        <span className="dashboard-card-label">Log:</span>
+                                        <span style={{ fontSize: '0.8rem' }}>{loginTime.toLocaleTimeString()} - {logoutTime.toLocaleTimeString()}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {((activeTab === 'reservations' && reservations.length === 0) ||
+                            (activeTab === 'analysis' && analysisRequests.length === 0) ||
+                            (activeTab === 'training' && trainingRequests.length === 0)) && (
+                                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                    No records found.
+                                </div>
+                            )}
                     </div>
                 </div>
 

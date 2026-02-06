@@ -8,12 +8,12 @@
   --accent-glow: rgba(47, 129, 247, 0.4);
   --border-color: #30363d;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  
+
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 2rem;
   --spacing-xl: 4rem;
-  
+
   --radius-md: 8px;
   --radius-lg: 16px;
 }
@@ -54,4 +54,276 @@ button {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Hero Section */
+.hero-container {
+  max-width: 1000px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  flex-wrap: wrap;
+}
+
+.hero-content {
+  flex: 1;
+  min-width: 300px;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.hero-description {
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 600px;
+}
+
+.hero-image-wrapper {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  justify-content: center;
+}
+
+.hero-image {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.15));
+  animation: float 6s ease-in-out infinite;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  body {
+    line-height: 1.4;
+  }
+
+  .hero-container {
+    flex-direction: column-reverse;
+    flex-direction: column;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .hero-content {
+    min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-description {
+    font-size: 1rem;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .hero-image-wrapper {
+    min-width: 100%;
+    margin-top: 1rem;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Calendar Responsiveness */
+.calendar-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .calendar-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive Padding Utilities */
+.main-section {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+  width: 100%;
+  max-width: 1000px;
+  /* Default for text pages */
+}
+
+/* Specific overwrite for Landing Page if needed, but we can class composition or keep inline if specific. 
+   Actually, landing page had 6rem top. Let's make a specific class. */
+.landing-main {
+  padding-top: 6rem;
+  padding-bottom: 4rem;
+}
+
+.admin-main {
+  padding-top: 6rem;
+  padding-bottom: 4rem;
+  width: 100%;
+  max-width: 1200px;
+  /* Wider for tables */
+}
+
+.content-card {
+  background: var(--bg-card);
+  padding: 2rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+
+  .main-section,
+  .landing-main,
+  .admin-main {
+    padding: 1rem;
+    padding-top: 2rem;
+    /* A bit of top space is usually needed for navbar clearance/visua balance */
+  }
+
+  .content-card {
+    padding: 1rem;
+  }
+
+  /* Also applying the body line-height fix here explicitly if not already covered */
+  body {
+    line-height: 1.4;
+  }
+}
+
+/* Dashboard Styles */
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.dashboard-table th {
+  text-align: left;
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.dashboard-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.dashboard-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dashboard-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dashboard-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.dashboard-card-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+  background: var(--bg-card);
+}
+
+/* Responsive Visibility */
+.desktop-only {
+  display: table-header-group;
+  width: -webkit-fill-available;
+  display: contents;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
 }

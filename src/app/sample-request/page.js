@@ -59,7 +59,7 @@ export default function SampleRequestPage() {
     return (
         <>
             <Navbar />
-            <main className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', maxWidth: '600px' }}>
+            <main className="container main-section">
                 {submitted ? (
                     <div style={{ background: 'var(--bg-card)', padding: '3rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
                         <div style={{ width: '64px', height: '64px', background: 'rgba(46, 160, 67, 0.15)', color: '#2ea043', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
@@ -80,7 +80,7 @@ export default function SampleRequestPage() {
                             Submit samples for our expert operators to test. You can drop them off or ship them to our facility.
                         </p>
 
-                        <form onSubmit={handleSubmit} style={{ background: 'var(--bg-card)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                        <form onSubmit={handleSubmit} className="content-card">
                             <h3 style={{ marginBottom: '1rem' }}>Contact Info</h3>
                             <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
                             <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />

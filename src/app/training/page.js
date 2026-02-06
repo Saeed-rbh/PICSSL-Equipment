@@ -54,7 +54,7 @@ export default function TrainingPage() {
     return (
         <>
             <Navbar />
-            <main className="container" style={{ paddingTop: '8rem', paddingBottom: '4rem', maxWidth: '600px' }}>
+            <main className="container main-section">
                 {submitted ? (
                     <div style={{ background: 'var(--bg-card)', padding: '3rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', textAlign: 'center' }}>
                         <div style={{ width: '64px', height: '64px', background: 'rgba(46, 160, 67, 0.15)', color: '#2ea043', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
@@ -75,7 +75,7 @@ export default function TrainingPage() {
                             Get certified to use the OPTIR system. Training takes approximately 2-3 hours and covers safety, sample prep, and software operation.
                         </p>
 
-                        <form onSubmit={handleSubmit} style={{ background: 'var(--bg-card)', padding: '2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+                        <form onSubmit={handleSubmit} className="content-card">
                             <Input
                                 label="Full Name"
                                 placeholder="Jane Doe"

@@ -1,6 +1,6 @@
 export default function Input({ label, type = 'text', value, onChange, placeholder, required = false, name }) {
     const containerStyle = {
-        marginBottom: '1rem',
+        width: '100%',
     };
 
     const labelStyle = {

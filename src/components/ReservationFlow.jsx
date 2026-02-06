@@ -222,7 +222,7 @@ export default function ReservationFlow() {
                 <h2 style={{ marginBottom: '1.5rem' }}>Reservation Details</h2>
                 <form onSubmit={handleSampleSubmit}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>Contact Information</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                         <Input
                             label="Full Name"
                             placeholder="Jane Doe"

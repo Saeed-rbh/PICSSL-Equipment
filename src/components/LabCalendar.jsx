@@ -135,7 +135,7 @@ export default function LabCalendar() {
     };
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start' }}>
+        <div className="calendar-wrapper">
             {/* Calendar Side */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>

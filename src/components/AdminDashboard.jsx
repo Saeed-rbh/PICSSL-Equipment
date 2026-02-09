@@ -651,19 +651,11 @@ function CreateRequestModal({ onClose, initialType }) {
                 <form onSubmit={handleSubmit}>
                     <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Applicant Info</h3>
-                        <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                             <input placeholder="Full Name" name="fullName" required value={formData.fullName} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                             <input placeholder="Email" name="email" type="email" required value={formData.email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                         </div>
-                        <div className="mobile-only" style={{ display: 'grid', gap: '1rem' }}>
-                            <input placeholder="Full Name" name="fullName" required value={formData.fullName} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                            <input placeholder="Email" name="email" type="email" required value={formData.email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                        </div>
-                        <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <input placeholder="Supervisor Name" name="supervisor" value={formData.supervisor} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                            <input placeholder="Supervisor Email" name="supervisorEmail" type="email" required value={formData.supervisorEmail} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                        </div>
-                        <div className="mobile-only" style={{ display: 'grid', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                             <input placeholder="Supervisor Name" name="supervisor" value={formData.supervisor} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                             <input placeholder="Supervisor Email" name="supervisorEmail" type="email" required value={formData.supervisorEmail} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                         </div>

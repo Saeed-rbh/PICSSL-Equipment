@@ -82,8 +82,14 @@ export default function SampleRequestPage() {
 
                         <form onSubmit={handleSubmit} className="content-card">
                             <h3 style={{ marginBottom: '1rem' }}>Contact Info</h3>
-                            <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
-                            <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
+                            <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
+                                <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
+                            </div>
+                            <div className="mobile-only" style={{ marginBottom: '1rem' }}>
+                                <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
+                                <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
+                            </div>
                             <Input label="University / Institution" placeholder="e.g. York University" name="institution" value={formData.institution} onChange={handleChange} required />
                             <Input label="Supervisor Email" type="email" placeholder="supervisor@university.edu" name="supervisorEmail" value={formData.supervisorEmail} onChange={handleChange} required />
 

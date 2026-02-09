@@ -82,19 +82,19 @@ export default function SampleRequestPage() {
 
                         <form onSubmit={handleSubmit} className="content-card">
                             <h3 style={{ marginBottom: '1rem' }}>Contact Info</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.5rem' }}>
                                 <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
                                 <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
                             </div>
-                            <div style={{ marginTop: '1rem' }}>
+                            <div style={{ marginTop: '0.5rem' }}>
                                 <Input label="University / Institution" placeholder="e.g. York University" name="institution" value={formData.institution} onChange={handleChange} required />
                             </div>
-                            <div style={{ marginTop: '1rem' }}>
+                            <div style={{ marginTop: '0.5rem' }}>
                                 <Input label="Supervisor Email" type="email" placeholder="supervisor@university.edu" name="supervisorEmail" value={formData.supervisorEmail} onChange={handleChange} required />
                             </div>
 
-                            <h3 style={{ marginBottom: '1rem', marginTop: '2rem' }}>Sample Info</h3>
-                            <div style={{ marginBottom: '1rem' }}>
+                            <h3 style={{ marginBottom: '0.5rem', marginTop: '1rem' }}>Sample Info</h3>
+                            <div style={{ marginBottom: '0.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Number of Samples</label>
                                 <input
                                     type="number"
@@ -105,10 +105,10 @@ export default function SampleRequestPage() {
                                     required
                                 />
                             </div>
-                            <div style={{ marginTop: '1rem' }}>
+                            <div style={{ marginTop: '0.5rem' }}>
                                 <Input label="Sample Description" placeholder="Briefly describe composition" name="sampleDescription" value={formData.sampleDescription} onChange={handleChange} required />
                             </div>
-                            <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
+                            <div style={{ marginBottom: '0.5rem', marginTop: '0.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Desired Analysis</label>
                                 <textarea
                                     style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', minHeight: '100px', fontFamily: 'inherit' }}
@@ -119,7 +119,7 @@ export default function SampleRequestPage() {
                                 ></textarea>
                             </div>
 
-                            <div style={{ marginTop: '2rem', marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ marginTop: '1rem', marginBottom: '0.75rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                                 <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Payment / Cost</h3>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                     <span style={{ color: 'var(--text-secondary)' }}>Analysis Fee ($100/sample):</span>
@@ -131,8 +131,8 @@ export default function SampleRequestPage() {
                                 <Input label="Cost Center (if applicable)" placeholder="e.g. 123-456-789" name="costCenter" value={formData.costCenter} onChange={handleChange} />
                             </div>
 
-                            <h3 style={{ marginBottom: '1rem', marginTop: '2rem' }}>Logistics</h3>
-                            <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
+                            <h3 style={{ marginBottom: '0.5rem', marginTop: '1rem' }}>Logistics</h3>
+                            <div style={{ marginBottom: '0.5rem', marginTop: '0.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>How will you get the samples to us?</label>
                                 <select
                                     name="deliveryMethod"
@@ -154,7 +154,7 @@ export default function SampleRequestPage() {
                                 Canada
                             </div>
 
-                            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+                            <div style={{ marginTop: '1rem', textAlign: 'right' }}>
                                 <Button type="submit" disabled={loading}>{loading ? 'Sending...' : 'Submit Request'}</Button>
                             </div>
                         </form>

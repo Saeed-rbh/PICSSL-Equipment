@@ -78,7 +78,7 @@ export default function TrainingPage() {
                         </p>
 
                         <form onSubmit={handleSubmit} className="content-card">
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.5rem' }}>
                                 <Input
                                     label="Full Name"
                                     placeholder="Jane Doe"
@@ -97,7 +97,7 @@ export default function TrainingPage() {
                                     onChange={handleChange}
                                 />
                             </div>
-                            <div style={{ marginTop: '1rem' }}>
+                            <div style={{ marginTop: '0.5rem' }}>
                                 <Input
                                     label="Department / Lab"
                                     placeholder="Materials Science, Lab 304"
@@ -108,9 +108,9 @@ export default function TrainingPage() {
                                 />
                             </div>
 
-                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem', marginTop: '1rem' }}>
+                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '0.5rem', marginTop: '0.5rem' }}>
                                 <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Second Trainee (Optional)</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.5rem' }}>
                                     <Input
                                         label="Trainee 2 Name"
                                         placeholder="Optional"
@@ -128,7 +128,7 @@ export default function TrainingPage() {
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
                                 <Input
                                     label="Supervisor Name"
                                     placeholder="Dr. Smith"
@@ -148,7 +148,7 @@ export default function TrainingPage() {
                                 />
                             </div>
 
-                            <div style={{ marginTop: '2rem', marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ marginTop: '1rem', marginBottom: '0.75rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                                 <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Payment / Cost</h3>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                     <span style={{ color: 'var(--text-secondary)' }}>Training Fee:</span>
@@ -163,7 +163,7 @@ export default function TrainingPage() {
                                 />
                             </div>
 
-                            <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ marginBottom: '0.5rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Time Availability / Preference</label>
                                 <textarea
                                     style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', minHeight: '80px', fontFamily: 'inherit' }}
@@ -175,7 +175,7 @@ export default function TrainingPage() {
                                 ></textarea>
                             </div>
 
-                            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+                            <div style={{ marginTop: '1rem', textAlign: 'right' }}>
                                 <Button type="submit" disabled={loading}>{loading ? 'Sending...' : 'Submit Request'}</Button>
                             </div>
                         </form>

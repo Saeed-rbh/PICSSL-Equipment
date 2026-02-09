@@ -97,16 +97,18 @@ export default function TrainingPage() {
                                     onChange={handleChange}
                                 />
                             </div>
-                            <Input
-                                label="Department / Lab"
-                                placeholder="Materials Science, Lab 304"
-                                required
-                                name="department"
-                                value={formData.department}
-                                onChange={handleChange}
-                            />
+                            <div style={{ marginTop: '10px' }}>
+                                <Input
+                                    label="Department / Lab"
+                                    placeholder="Materials Science, Lab 304"
+                                    required
+                                    name="department"
+                                    value={formData.department}
+                                    onChange={handleChange}
+                                />
+                            </div>
 
-                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem', marginTop: '10px' }}>
                                 <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Second Trainee (Optional)</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                                     <Input
@@ -146,8 +148,8 @@ export default function TrainingPage() {
                                 />
                             </div>
 
-                            <div style={{ marginTop: '2rem', marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Payment / Cost</h3>
+                            <div style={{ marginTop: '10px', marginBottom: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)', marginTop: '10px' }}>Payment / Cost</h3>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                     <span style={{ color: 'var(--text-secondary)' }}>Training Fee:</span>
                                     <span style={{ fontWeight: 'bold', color: 'var(--accent-primary)', fontSize: '1.1rem' }}>$250 CAD</span>

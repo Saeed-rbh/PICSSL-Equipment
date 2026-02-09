@@ -9,6 +9,8 @@ export default function TrainingPage() {
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
+        trainee2Name: '',
+        trainee2Email: '',
         department: '',
         supervisor: '',
         supervisorEmail: '',
@@ -101,6 +103,25 @@ export default function TrainingPage() {
                                 value={formData.department}
                                 onChange={handleChange}
                             />
+
+                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                                <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Second Trainee (Optional)</h3>
+                                <Input
+                                    label="Trainee 2 Name"
+                                    placeholder="Optional"
+                                    name="trainee2Name"
+                                    value={formData.trainee2Name}
+                                    onChange={handleChange}
+                                />
+                                <Input
+                                    label="Trainee 2 Email"
+                                    type="email"
+                                    placeholder="Optional"
+                                    name="trainee2Email"
+                                    value={formData.trainee2Email}
+                                    onChange={handleChange}
+                                />
+                            </div>
                             <Input
                                 label="Supervisor Name"
                                 placeholder="Dr. Smith"

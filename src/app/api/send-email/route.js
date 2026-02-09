@@ -30,7 +30,7 @@ export async function POST(req) {
 
         // HANDLE TRAINING REQUEST
         if (body.type === 'training') {
-            const { fullName, email, department, supervisor, supervisorEmail, costCenter, availability } = body;
+            const { fullName, email, trainee2Name, trainee2Email, department, supervisor, supervisorEmail, costCenter, availability } = body;
 
             // Save to Firestore
             try {
@@ -49,6 +49,7 @@ export async function POST(req) {
             <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 20px;">
                 <h2 style="color: #bc0032; border-bottom: 2px solid #bc0032; padding-bottom: 10px;">New Training Request</h2>
                 <p><strong>Applicant:</strong> ${fullName} (${email})</p>
+                ${trainee2Name ? `<p><strong>Trainee 2:</strong> ${trainee2Name} (${trainee2Email || 'No email provided'})</p>` : ''}
                 
                 <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
                     <tr style="background: #f9f9f9;"><td style="padding: 10px; border: 1px solid #ddd;"><strong>Department</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${department}</td></tr>

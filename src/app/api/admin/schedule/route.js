@@ -36,7 +36,7 @@ export async function POST(req) {
         // 2. Fetch Document to get Email Details
         const docRef = await db.collection(collection).doc(id).get();
         const data = docRef.data();
-        const { fullName, email, supervisorEmail, analysisType, department } = data;
+        const { fullName, email, trainee2Name, trainee2Email, supervisorEmail, analysisType, department } = data;
 
         // 3. Send Email
         // Configure Transporter
@@ -60,8 +60,10 @@ export async function POST(req) {
 
         const timeRange = `${scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${scheduledEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
 
+        const trainee2Text = trainee2Name ? `\nTrainee 2: ${trainee2Name} (${trainee2Email || 'No email'})` : '';
+
         const emailText = `
-Dear ${fullName},
+Dear ${fullName}${trainee2Name ? ` & ${trainee2Name}` : ''},
 
 Good news! Your ${typeLabel.toLowerCase()} has been scheduled.
 
@@ -72,6 +74,7 @@ Time: ${timeRange}
 Location: 4700 Keele St, Petrie Building Room 020 - Science Store
 
 ${collection === 'analysis_requests' ? `Analysis Type: ${analysisType}` : `Department: ${department}`}
+${trainee2Text}
 
 System Access Credentials (if needed during session):
 Username: ${apiUsername}
@@ -96,8 +99,8 @@ OPTIR Reservation System
         const event = {
             start: [year, month, day, hour, minute],
             duration: { hours: durationHours, minutes: durationMinutes },
-            title: `OPTIR ${typeLabel}: ${fullName}`,
-            description: `Scheduled ${typeLabel}\n\nTime: ${timeRange}\nNotes: ${notes || ''}\n\nCredentials:\nUser: ${apiUsername}\nPass: ${apiPassword}`,
+            title: `OPTIR ${typeLabel}: ${fullName}${trainee2Name ? ` & ${trainee2Name}` : ''}`,
+            description: `Scheduled ${typeLabel}\n\nTime: ${timeRange}\nNotes: ${notes || ''}\n\nCredentials:\nUser: ${apiUsername}\nPass: ${apiPassword}${trainee2Name ? `\n\nTrainee 2: ${trainee2Name}` : ''}`,
             location: '4700 Keele St, Petrie Building Room 020 - Science Store, Toronto, Ontario M3J 1P3, Canada',
             url: 'http://picssl.yorku.ca',
             status: 'CONFIRMED',
@@ -111,11 +114,15 @@ OPTIR Reservation System
             event.attendees.push({ name: 'Supervisor', email: supervisorEmail, role: 'OPT-PARTICIPANT' });
         }
 
+        if (trainee2Name && trainee2Email) {
+            event.attendees.push({ name: trainee2Name, email: trainee2Email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' });
+        }
+
         if (transporter) {
             const { error, value } = ics.createEvent(event);
             const mailOptions = {
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                to: [email, supervisorEmail, "Arabha@yorku.ca"].filter(Boolean),
+                to: [email, trainee2Email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"].filter(Boolean),
                 subject: subject,
                 text: emailText,
             };

@@ -603,6 +603,7 @@ function CreateRequestModal({ onClose, initialType }) {
         costCenter: '',
         trainee2Name: '',
         trainee2Email: '',
+        availability: '',
         // Analysis Specific
         institution: '',
         sampleCount: 1,
@@ -645,7 +646,16 @@ function CreateRequestModal({ onClose, initialType }) {
 
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-            <div className="card-animate" style={{ background: 'var(--bg-card)', padding: '2rem', borderRadius: 'var(--radius-lg)', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="card-animate" style={{ background: 'var(--bg-card)', padding: '2rem', borderRadius: 'var(--radius-lg)', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+                <button
+                    onClick={onClose}
+                    style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.5rem', padding: '0.25rem', lineHeight: '1', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}
+                    onMouseOver={(e) => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                    type="button"
+                >
+                    ✕
+                </button>
                 <h2 style={{ marginBottom: '1.5rem' }}>Create {type === 'training' ? 'Training' : 'Sample Analysis'} Request</h2>
 
                 <form onSubmit={handleSubmit}>
@@ -663,24 +673,27 @@ function CreateRequestModal({ onClose, initialType }) {
                         {type === 'training' && (
                             <>
                                 <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Training Details</h3>
-                                <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <input placeholder="Department" name="department" required value={formData.department} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                    <input placeholder="Cost Center" name="costCenter" value={formData.costCenter} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                </div>
-                                <div className="mobile-only" style={{ display: 'grid', gap: '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                                     <input placeholder="Department" name="department" required value={formData.department} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                     <input placeholder="Cost Center" name="costCenter" value={formData.costCenter} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                 </div>
                                 <div style={{ background: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '4px' }}>
                                     <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Trainee 2 (Optional)</h4>
-                                    <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                                         <input placeholder="Name" name="trainee2Name" value={formData.trainee2Name} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                         <input placeholder="Email" name="trainee2Email" type="email" value={formData.trainee2Email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                     </div>
-                                    <div className="mobile-only" style={{ display: 'grid', gap: '1rem' }}>
-                                        <input placeholder="Name" name="trainee2Name" value={formData.trainee2Name} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                        <input placeholder="Email" name="trainee2Email" type="email" value={formData.trainee2Email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                    </div>
+                                </div>
+                                <div style={{ marginTop: '0.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Time Availability / Preference</label>
+                                    <textarea
+                                        placeholder="e.g. Mon/Wed mornings, or next week anytime"
+                                        name="availability"
+                                        required
+                                        value={formData.availability}
+                                        onChange={handleChange}
+                                        style={{ padding: '0.5rem', width: '100%', height: '60px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', fontFamily: 'inherit' }}
+                                    />
                                 </div>
                             </>
                         )}
@@ -689,26 +702,51 @@ function CreateRequestModal({ onClose, initialType }) {
                             <>
                                 <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Analysis Details</h3>
                                 <input placeholder="Institution" name="institution" required value={formData.institution} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
-                                    <input type="number" placeholder="Sample Count" name="sampleCount" min="1" required value={formData.sampleCount} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                    <input placeholder="Analysis Type" name="analysisType" required value={formData.analysisType} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                <div style={{ marginBottom: '0.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Number of Samples</label>
+                                    <input type="number" name="sampleCount" min="1" required value={formData.sampleCount} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                 </div>
-                                <div className="mobile-only" style={{ display: 'grid', gap: '1rem' }}>
-                                    <input type="number" placeholder="Sample Count" name="sampleCount" min="1" required value={formData.sampleCount} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                    <input placeholder="Analysis Type" name="analysisType" required value={formData.analysisType} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                <div style={{ marginBottom: '0.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Sample Description</label>
+                                    <input placeholder="Briefly describe composition" name="sampleDescription" required value={formData.sampleDescription} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                 </div>
-                                <textarea placeholder="Sample Description" name="sampleDescription" required value={formData.sampleDescription} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', height: '60px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                                <input type="number" placeholder="Estimated Cost" name="estimatedCost" required value={formData.estimatedCost} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                <div style={{ marginBottom: '0.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Desired Analysis</label>
+                                    <textarea
+                                        placeholder="What are you looking for? (e.g. chemical mapping of interface)"
+                                        name="analysisType"
+                                        required
+                                        value={formData.analysisType}
+                                        onChange={handleChange}
+                                        style={{ padding: '0.5rem', width: '100%', height: '80px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', fontFamily: 'inherit' }}
+                                    />
+                                </div>
+                                <div style={{ marginBottom: '0.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Estimated Cost</label>
+                                    <input type="number" name="estimatedCost" required value={formData.estimatedCost} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                </div>
+                                <div style={{ marginBottom: '0.5rem' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cost Center (if applicable)</label>
+                                    <input placeholder="e.g. 123-456-789" name="costCenter" value={formData.costCenter} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>How will you get the samples to us?</label>
+                                    <select
+                                        name="deliveryMethod"
+                                        value={formData.deliveryMethod}
+                                        onChange={handleChange}
+                                        style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                                    >
+                                        <option>I will drop them off at the Lab</option>
+                                        <option>I will ship them via courier</option>
+                                    </select>
+                                </div>
                             </>
                         )}
 
                         <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Schedule & Confirmation</h3>
                         <input type="date" name="scheduleDate" required value={formData.scheduleDate} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                        <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <input type="time" name="startTime" required value={formData.startTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                            <input type="time" name="endTime" required value={formData.endTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
-                        </div>
-                        <div className="mobile-only" style={{ display: 'grid', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                             <input type="time" name="startTime" required value={formData.startTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                             <input type="time" name="endTime" required value={formData.endTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                         </div>

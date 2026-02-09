@@ -82,11 +82,7 @@ export default function SampleRequestPage() {
 
                         <form onSubmit={handleSubmit} className="content-card">
                             <h3 style={{ marginBottom: '1rem' }}>Contact Info</h3>
-                            <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
-                                <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
-                            </div>
-                            <div className="mobile-only" style={{ marginBottom: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                                 <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
                                 <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
                             </div>

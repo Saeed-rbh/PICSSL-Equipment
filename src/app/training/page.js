@@ -78,26 +78,7 @@ export default function TrainingPage() {
                         </p>
 
                         <form onSubmit={handleSubmit} className="content-card">
-                            <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                <Input
-                                    label="Full Name"
-                                    placeholder="Jane Doe"
-                                    required
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Email"
-                                    type="email"
-                                    placeholder="jane@university.edu"
-                                    required
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div className="mobile-only" style={{ marginBottom: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                                 <Input
                                     label="Full Name"
                                     placeholder="Jane Doe"
@@ -127,24 +108,7 @@ export default function TrainingPage() {
 
                             <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
                                 <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Second Trainee (Optional)</h3>
-                                <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <Input
-                                        label="Trainee 2 Name"
-                                        placeholder="Optional"
-                                        name="trainee2Name"
-                                        value={formData.trainee2Name}
-                                        onChange={handleChange}
-                                    />
-                                    <Input
-                                        label="Trainee 2 Email"
-                                        type="email"
-                                        placeholder="Optional"
-                                        name="trainee2Email"
-                                        value={formData.trainee2Email}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                <div className="mobile-only">
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                                     <Input
                                         label="Trainee 2 Name"
                                         placeholder="Optional"
@@ -162,26 +126,7 @@ export default function TrainingPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                <Input
-                                    label="Supervisor Name"
-                                    placeholder="Dr. Smith"
-                                    required
-                                    name="supervisor"
-                                    value={formData.supervisor}
-                                    onChange={handleChange}
-                                />
-                                <Input
-                                    label="Supervisor Email"
-                                    type="email"
-                                    placeholder="supervisor@university.edu"
-                                    required
-                                    name="supervisorEmail"
-                                    value={formData.supervisorEmail}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div className="mobile-only" style={{ marginBottom: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                                 <Input
                                     label="Supervisor Name"
                                     placeholder="Dr. Smith"

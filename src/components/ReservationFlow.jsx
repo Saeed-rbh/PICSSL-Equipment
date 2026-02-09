@@ -222,24 +222,7 @@ export default function ReservationFlow() {
                 <h2 style={{ marginBottom: '1.5rem' }}>Reservation Details</h2>
                 <form onSubmit={handleSampleSubmit}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--accent-primary)' }}>Contact Information</h3>
-                    <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                        <Input
-                            label="Full Name"
-                            placeholder="Jane Doe"
-                            required
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        />
-                        <Input
-                            label="Email"
-                            type="email"
-                            placeholder="jane@yorku.ca"
-                            required
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
-                    </div>
-                    <div className="mobile-only" style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                         <Input
                             label="Full Name"
                             placeholder="Jane Doe"
@@ -263,24 +246,7 @@ export default function ReservationFlow() {
                         value={formData.department}
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     />
-                    <div className="desktop-only" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                        <Input
-                            label="Supervisor Name"
-                            placeholder="Dr. Smith"
-                            required
-                            value={formData.supervisor}
-                            onChange={(e) => setFormData({ ...formData, supervisor: e.target.value })}
-                        />
-                        <Input
-                            label="Supervisor Email"
-                            type="email"
-                            placeholder="supervisor@university.edu"
-                            required
-                            value={formData.supervisorEmail}
-                            onChange={(e) => setFormData({ ...formData, supervisorEmail: e.target.value })}
-                        />
-                    </div>
-                    <div className="mobile-only" style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                         <Input
                             label="Supervisor Name"
                             placeholder="Dr. Smith"

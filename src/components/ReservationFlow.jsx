@@ -239,7 +239,7 @@ export default function ReservationFlow() {
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
                     </div>
-                    <div style={{ marginTop: '10px' }}>
+                    <div style={{ marginTop: '1rem' }}>
                         <Input
                             label="Department / University"
                             placeholder="e.g. Chemistry, York U"
@@ -248,7 +248,7 @@ export default function ReservationFlow() {
                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                         />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                         <Input
                             label="Supervisor Name"
                             placeholder="Dr. Smith"
@@ -266,7 +266,7 @@ export default function ReservationFlow() {
                         />
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--accent-primary)', marginTop: '10px' }}>Sample Information</h3>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--accent-primary)', marginTop: '1.5rem' }}>Sample Information</h3>
                     <Input
                         label="Sample Name / ID"
                         placeholder="e.g. Polymer Blend 5X"
@@ -274,7 +274,7 @@ export default function ReservationFlow() {
                         value={formData.sampleName}
                         onChange={(e) => setFormData({ ...formData, sampleName: e.target.value })}
                     />
-                    <div style={{ marginBottom: '1rem', marginTop: '10px' }}>
+                    <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>State</label>
                         <select
                             style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none' }}
@@ -289,12 +289,14 @@ export default function ReservationFlow() {
                             <option value="biological">Biological Cell/Tissue</option>
                         </select>
                     </div>
-                    <Input
-                        label="Hazards (if any)"
-                        placeholder="e.g. Toxic, Flammable"
-                        value={formData.hazards}
-                        onChange={(e) => setFormData({ ...formData, hazards: e.target.value })}
-                    />
+                    <div style={{ marginTop: '1rem' }}>
+                        <Input
+                            label="Hazards (if any)"
+                            placeholder="e.g. Toxic, Flammable"
+                            value={formData.hazards}
+                            onChange={(e) => setFormData({ ...formData, hazards: e.target.value })}
+                        />
+                    </div>
 
                     <div style={{ marginTop: '2rem', marginBottom: '1rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                         <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Payment / Cost</h3>

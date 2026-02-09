@@ -97,16 +97,18 @@ export default function TrainingPage() {
                                     onChange={handleChange}
                                 />
                             </div>
-                            <Input
-                                label="Department / Lab"
-                                placeholder="Materials Science, Lab 304"
-                                required
-                                name="department"
-                                value={formData.department}
-                                onChange={handleChange}
-                            />
+                            <div style={{ marginTop: '1rem' }}>
+                                <Input
+                                    label="Department / Lab"
+                                    placeholder="Materials Science, Lab 304"
+                                    required
+                                    name="department"
+                                    value={formData.department}
+                                    onChange={handleChange}
+                                />
+                            </div>
 
-                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+                            <div style={{ padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '1rem', marginTop: '1rem' }}>
                                 <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-secondary)' }}>Second Trainee (Optional)</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
                                     <Input
@@ -126,7 +128,7 @@ export default function TrainingPage() {
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                                 <Input
                                     label="Supervisor Name"
                                     placeholder="Dr. Smith"

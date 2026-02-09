@@ -86,11 +86,13 @@ export default function SampleRequestPage() {
                                 <Input label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} required />
                                 <Input label="Email" type="email" name="email" value={formData.email} onChange={handleChange} required />
                             </div>
-                            <Input label="University / Institution" placeholder="e.g. York University" name="institution" value={formData.institution} onChange={handleChange} required />
+                            <div style={{ marginTop: '10px' }}>
+                                <Input label="University / Institution" placeholder="e.g. York University" name="institution" value={formData.institution} onChange={handleChange} required />
+                            </div>
                             <Input label="Supervisor Email" type="email" placeholder="supervisor@university.edu" name="supervisorEmail" value={formData.supervisorEmail} onChange={handleChange} required />
 
                             <h3 style={{ marginBottom: '1rem', marginTop: '2rem' }}>Sample Info</h3>
-                            <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ marginBottom: '1rem', marginTop: '10px' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Number of Samples</label>
                                 <input
                                     type="number"
@@ -101,8 +103,10 @@ export default function SampleRequestPage() {
                                     required
                                 />
                             </div>
-                            <Input label="Sample Description" placeholder="Briefly describe composition" name="sampleDescription" value={formData.sampleDescription} onChange={handleChange} required />
-                            <div style={{ marginBottom: '1rem' }}>
+                            <div style={{ marginBottom: 0 }}>
+                                <Input label="Sample Description" placeholder="Briefly describe composition" name="sampleDescription" value={formData.sampleDescription} onChange={handleChange} required />
+                            </div>
+                            <div style={{ marginBottom: '1rem', marginTop: '10px' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Desired Analysis</label>
                                 <textarea
                                     style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', outline: 'none', minHeight: '100px', fontFamily: 'inherit' }}
@@ -125,7 +129,7 @@ export default function SampleRequestPage() {
                                 <Input label="Cost Center (if applicable)" placeholder="e.g. 123-456-789" name="costCenter" value={formData.costCenter} onChange={handleChange} />
                             </div>
 
-                            <h3 style={{ marginBottom: '1rem', marginTop: '2rem' }}>Logistics</h3>
+                            <h3 style={{ margin: 0 }}>Logistics</h3>
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>How will you get the samples to us?</label>
                                 <select
@@ -139,7 +143,7 @@ export default function SampleRequestPage() {
                                 </select>
                             </div>
 
-                            <div style={{ padding: '1rem', background: 'rgba(47, 129, 247, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid var(--accent-primary)', fontSize: '0.9rem' }}>
+                            <div style={{ padding: '1rem', background: 'rgba(47, 129, 247, 0.1)', borderRadius: 'var(--radius-md)', border: '1px solid var(--accent-primary)', fontSize: '0.9rem', margin: 0 }}>
                                 <strong>Shipping Address:</strong><br />
                                 Reza Rizvi<br />
                                 4700 Keele St<br />

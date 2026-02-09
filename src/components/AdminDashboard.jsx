@@ -82,12 +82,6 @@ export default function AdminDashboard({ reservations: initialReservations, trai
             <main className="container admin-main">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <h1 className="title-gradient" style={{ fontSize: '2.5rem', marginBottom: 0 }}>Admin Dashboard</h1>
-                    <button
-                        onClick={() => setCreationModalOpen(true)}
-                        style={{ padding: '0.75rem 1.5rem', background: 'var(--accent-primary)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                        + Create Request
-                    </button>
                 </div>
 
                 {/* Summary Section */}
@@ -137,6 +131,44 @@ export default function AdminDashboard({ reservations: initialReservations, trai
 
                 {/* Content */}
                 <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+
+                    {activeTab === 'analysis' && (
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setCreationModalOpen('analysis')}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: 'var(--accent-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                + Create Analysis Request
+                            </button>
+                        </div>
+                    )}
+
+                    {activeTab === 'training' && (
+                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setCreationModalOpen('training')}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: 'var(--accent-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                + Create Training Request
+                            </button>
+                        </div>
+                    )}
 
                     {activeTab === 'logs' && (
                         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
@@ -388,7 +420,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
 
                 {selectedItem && <DetailsModal item={selectedItem} logs={accessLogs} onClose={() => setSelectedItem(null)} formatDate={formatDate} />}
                 {schedulingItem && <ScheduleModal item={schedulingItem} onClose={() => setSchedulingItem(null)} />}
-                {creationModalOpen && <CreateRequestModal onClose={() => setCreationModalOpen(false)} />}
+                {creationModalOpen && <CreateRequestModal initialType={creationModalOpen} onClose={() => setCreationModalOpen(false)} />}
             </main >
         </>
     );
@@ -552,8 +584,8 @@ function ScheduleModal({ item, onClose }) {
     );
 }
 
-function CreateRequestModal({ onClose }) {
-    const [type, setType] = useState('training'); // 'training' or 'analysis'
+function CreateRequestModal({ onClose, initialType }) {
+    const [type, setType] = useState(initialType || 'training'); // 'training' or 'analysis'
     const [loading, setLoading] = useState(false);
 
     // Common Fields
@@ -631,26 +663,26 @@ function CreateRequestModal({ onClose }) {
                     <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>Applicant Info</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <input placeholder="Full Name" name="fullName" required value={formData.fullName} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                            <input placeholder="Email" name="email" type="email" required value={formData.email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                            <input placeholder="Full Name" name="fullName" required value={formData.fullName} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                            <input placeholder="Email" name="email" type="email" required value={formData.email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <input placeholder="Supervisor Name" name="supervisor" value={formData.supervisor} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                            <input placeholder="Supervisor Email" name="supervisorEmail" type="email" required value={formData.supervisorEmail} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                            <input placeholder="Supervisor Name" name="supervisor" value={formData.supervisor} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                            <input placeholder="Supervisor Email" name="supervisorEmail" type="email" required value={formData.supervisorEmail} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                         </div>
 
                         {type === 'training' && (
                             <>
                                 <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Training Details</h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <input placeholder="Department" name="department" required value={formData.department} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                                    <input placeholder="Cost Center" name="costCenter" value={formData.costCenter} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                                    <input placeholder="Department" name="department" required value={formData.department} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                    <input placeholder="Cost Center" name="costCenter" value={formData.costCenter} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                 </div>
                                 <div style={{ background: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '4px' }}>
                                     <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Trainee 2 (Optional)</h4>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                        <input placeholder="Name" name="trainee2Name" value={formData.trainee2Name} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                                        <input placeholder="Email" name="trainee2Email" type="email" value={formData.trainee2Email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                                        <input placeholder="Name" name="trainee2Name" value={formData.trainee2Name} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                        <input placeholder="Email" name="trainee2Email" type="email" value={formData.trainee2Email} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                     </div>
                                 </div>
                             </>
@@ -659,23 +691,23 @@ function CreateRequestModal({ onClose }) {
                         {type === 'analysis' && (
                             <>
                                 <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Analysis Details</h3>
-                                <input placeholder="Institution" name="institution" required value={formData.institution} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                                <input placeholder="Institution" name="institution" required value={formData.institution} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
-                                    <input type="number" placeholder="Count" name="sampleCount" min="1" required value={formData.sampleCount} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                                    <input placeholder="Analysis Type" name="analysisType" required value={formData.analysisType} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                                    <input type="number" placeholder="Count" name="sampleCount" min="1" required value={formData.sampleCount} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                    <input placeholder="Analysis Type" name="analysisType" required value={formData.analysisType} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                                 </div>
-                                <textarea placeholder="Sample Description" name="sampleDescription" required value={formData.sampleDescription} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', height: '60px' }} />
-                                <input type="number" placeholder="Estimated Cost" name="estimatedCost" required value={formData.estimatedCost} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                                <textarea placeholder="Sample Description" name="sampleDescription" required value={formData.sampleDescription} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', height: '60px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                                <input type="number" placeholder="Estimated Cost" name="estimatedCost" required value={formData.estimatedCost} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                             </>
                         )}
 
                         <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Schedule & Confirmation</h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                            <input type="date" name="scheduleDate" required value={formData.scheduleDate} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                            <input type="time" name="startTime" required value={formData.startTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
-                            <input type="time" name="endTime" required value={formData.endTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%' }} />
+                            <input type="date" name="scheduleDate" required value={formData.scheduleDate} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                            <input type="time" name="startTime" required value={formData.startTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
+                            <input type="time" name="endTime" required value={formData.endTime} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                         </div>
-                        <textarea placeholder="Admin Notes (included in email)" name="notes" value={formData.notes} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', height: '60px' }} />
+                        <textarea placeholder="Admin Notes (included in email)" name="notes" value={formData.notes} onChange={handleChange} style={{ padding: '0.5rem', width: '100%', height: '60px', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }} />
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>

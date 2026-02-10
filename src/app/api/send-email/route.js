@@ -59,14 +59,16 @@ export async function POST(req) {
                     <tr style="background: #f9f9f9;"><td style="padding: 10px; border: 1px solid #ddd;"><strong>Proponent Notes</strong></td><td style="padding: 10px; border: 1px solid #ddd;">${availability}</td></tr>
                 </table>
                 <p style="margin-top: 20px;">We will contact you shortly to schedule your session.</p>
-                <hr>
-                <p style="font-size: 12px; color: #777;">OPTIR Reservation System | PICSSL Lab</p>
+                <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 10px; font-size: 12px; color: #777;">
+                    <p style="margin: 0;"><strong>PICSSL Lab</strong> | <a href="https://picssl-equipment.ca/" style="color: #bc0032; text-decoration: none;">https://picssl-equipment.ca/</a></p>
+                    <p style="margin: 5px 0 0;">4700 Keele St, Petrie Science and Engineering Building, Room 020<br>Toronto, ON M3J 1P3</p>
+                </div>
             </div>`;
 
             if (transporter) {
                 await transporter.sendMail({
                     from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                    to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
+                    to: ["Arabha@yorku.ca", email, supervisorEmail],
                     subject: subject,
                     html: html, // HTML Body
                 });
@@ -124,14 +126,16 @@ export async function POST(req) {
                     Petrie Building Room 002, Science Store<br>
                     Toronto, Ontario M3J 1P3, Canada
                 </div>
-                <hr>
-                <p style="font-size: 12px; color: #777;">OPTIR Reservation System | PICSSL Lab</p>
+                <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 10px; font-size: 12px; color: #777;">
+                    <p style="margin: 0;"><strong>PICSSL Lab</strong> | <a href="https://picssl-equipment.ca/" style="color: #004c97; text-decoration: none;">https://picssl-equipment.ca/</a></p>
+                    <p style="margin: 5px 0 0;">4700 Keele St, Petrie Science and Engineering Building, Room 020<br>Toronto, ON M3J 1P3</p>
+                </div>
             </div>`;
 
             if (transporter) {
                 await transporter.sendMail({
                     from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                    to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
+                    to: ["Arabha@yorku.ca", email, supervisorEmail],
                     subject: subject,
                     html: html,
                 });
@@ -180,8 +184,8 @@ export async function POST(req) {
             duration: { hours: durationHours, minutes: 0 },
             title: `OPTIR Reservation: ${fullName}`,
             description: `Reservation Details:\nUser: ${fullName} (${email})\nSupervisor: ${supervisor} (${supervisorEmail})\nSample: ${sampleName}\nTotal Cost: $${totalCost}\n\nInstrument: Optical Photothermal IR Spectroscopy`,
-            location: '4700 Keele St, Petrie Building Room 020 - Science Store, Toronto, Ontario M3J 1P3, Canada',
-            url: 'http://picssl.yorku.ca',
+            location: '4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3',
+            url: 'https://picssl-equipment.ca/',
             geo: { lat: 43.7735, lon: -79.5019 },
             categories: ['Lab Reservation', 'Scientific'],
             status: 'CONFIRMED',
@@ -242,16 +246,16 @@ export async function POST(req) {
                 <p style="font-size: 14px;"><strong>Supervisor:</strong> ${supervisor}</p>
                 <p>A calendar invitation is attached.</p>
             </div>
-            <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #666;">
-                OPTIR Reservation System | PICSSL Lab<br>
-                York University
+            <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
+                <p style="margin: 0 0 5px;"><strong>PICSSL Lab</strong> | <a href="https://picssl-equipment.ca/" style="color: #e31837; text-decoration: none;">https://picssl-equipment.ca/</a></p>
+                <p style="margin: 0;">4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3</p>
             </div>
         </div>`;
 
         if (transporter) {
             const mailOptions = {
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                to: [email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"],
+                to: [email, supervisorEmail, "Arabha@yorku.ca"],
                 subject: reservationSubject,
                 html: html, // HTML
             };

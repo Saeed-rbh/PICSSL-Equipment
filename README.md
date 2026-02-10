@@ -89,3 +89,124 @@ If the internet is down or a user is stuck:
 -   **"Network Failed"**: The client has switched to Offline Mode. Use Admin credentials to unlock.
 -   **"Usage saved locally"**: Internet failed during logout. Check `offline_logs.txt` in the script directory for the usage report.
 -   **Closing the Kiosk**: The app is designed to be unclosable. To close it for maintenance, open Task Manager (`Ctrl+Shift+Esc`) and end the `Python` process.
+
+---
+
+## 💰 Pricing & Rates
+
+| Service | Rate | Notes |
+| :--- | :--- | :--- |
+| **Instrument Access** | **$50 CAD / hour** | Standard academic rate. Charged based on actual usage duration. |
+| **PICSSL Group** | **$0 CAD** | Internal usage. |
+| **Training Session** | **$250 CAD** | Flat fee per trainee. |
+| **Sample Analysis** | **Custom** | Estimated cost provided during request. |
+
+---
+
+## 📧 Email Notifications
+
+### Recipients
+All system emails are sent from `reservations@picssl.yorku.ca`.
+The following parties receive notifications for **Training**, **Analysis**, and **Reservation** actions:
+1.  **Arabha@yorku.ca** (Admin)
+2.  **Applicant** (The user making the request)
+3.  **Supervisor** (The supervisor email provided in the form)
+
+### Email Templates
+
+#### 1. Training Request
+**Subject:** `New Training Request: [Applicant Name]`
+**Body:**
+> **New Training Request**
+>
+> **Applicant:** [Name] ([Email])
+> **Trainee 2:** [Name] (if applicable)
+>
+> **Department:** [Dept]
+> **Supervisor:** [Name] ([Email])
+> **Cost Center:** [Code]
+> **Fee:** $250 CAD
+> **Proponent Notes:** [Availability]
+>
+> We will contact you shortly to schedule your session.
+>
+> **PICSSL Lab** | https://picssl-equipment.ca/
+> 4700 Keele St, Petrie Science and Engineering Building, Room 020
+> Toronto, ON M3J 1P3
+
+#### 2. Sample Analysis Request
+**Subject:** `New Sample Analysis Request: [Applicant Name]`
+**Body:**
+> **Sample Analysis Request**
+>
+> **Project Details**
+> Applicant: [Name] ([Email])
+> Supervisor: [Email]
+> Institution: [Institution]
+>
+> **Sample Info**
+> Count: [Number]
+> Type: [Type]
+> Description: [Description]
+>
+> **Logistics**
+> Method: [Delivery Method]
+> Est. Cost: $[Amount] CAD
+> Cost Center: [Code]
+>
+> **Shipping Address:**
+> Reza Rizvi
+> 4700 Keele St
+> Petrie Building Room 002, Science Store
+> Toronto, Ontario M3J 1P3, Canada
+>
+> **PICSSL Lab** | https://picssl-equipment.ca/
+> 4700 Keele St, Petrie Science and Engineering Building, Room 020
+> Toronto, ON M3J 1P3
+
+#### 3. Reservation Confirmation
+**Subject:** `Confirmation: OPTIR Reservation - [Date]`
+**Body:**
+> **Reservation Confirmed**
+>
+> Dear [Name],
+> Your session on the **Optical Photothermal IR Spectroscopy** system has been booked.
+>
+> **Session Credentials**
+> Use these to unlock the PC:
+> Username: **[Generated Username]**
+> Password: **[Generated Password]**
+>
+> **Date:** [Date]
+> **Time:** [Start Time] - [Duration] Hrs
+> **Sample:** [Sample Name]
+> **Est. Cost:** $[Amount] CAD
+> **Supervisor:** [Name]
+>
+> *A calendar invitation (ICS) is attached.*
+>
+> **PICSSL Lab** | https://picssl-equipment.ca/
+> 4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3
+
+#### 4. Admin Scheduled Request (Training/Analysis)
+**Subject:** `Confirmed: OPTIR [Type] - [Date]`
+**Body:**
+> **[Type] Scheduled**
+>
+> Dear [Name],
+> Your **[Type]** has been scheduled.
+>
+> **Session Credentials**
+> Use these to unlock the PC:
+> Username: **[Generated Username]**
+> Password: **[Generated Password]**
+>
+> **Date:** [Date]
+> **Time:** [Start Time] - [End Time]
+> **Dept/Type:** [Details]
+> **Admin Notes:** [Notes]
+>
+> *A calendar invitation (ICS) is attached.*
+>
+> **PICSSL Lab** | https://picssl-equipment.ca/
+> 4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3

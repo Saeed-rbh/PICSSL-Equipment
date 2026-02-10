@@ -58,7 +58,7 @@ export async function POST(req) {
 
         let typeLabel = '';
         let trainee2Text = '';
-        let recipients = [email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"];
+        let recipients = [email, supervisorEmail, "Arabha@yorku.ca"];
 
         if (type === 'training') {
             collectionName = 'training_requests';
@@ -123,32 +123,56 @@ export async function POST(req) {
         const subject = `Confirmed: OPTIR ${typeLabel} - ${startDateTime.toLocaleDateString()}`;
         const timeRange = `${startDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
 
-        const emailText = `
-Dear ${fullName}${docData.trainee2Name ? ` & ${docData.trainee2Name}` : ''},
+        const html = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 0;">
+            <div style="background-color: ${type === 'training' ? '#bc0032' : '#004c97'}; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">${type === 'training' ? 'Training Scheduled' : 'Analysis Scheduled'}</h1>
+            </div>
+            
+            <div style="padding: 20px;">
+                <p>Dear ${fullName}${docData.trainee2Name ? ` & ${docData.trainee2Name}` : ''},</p>
+                <p>Your <strong>${typeLabel}</strong> has been scheduled.</p>
 
-Good news! Your ${typeLabel.toLowerCase()} has been scheduled.
+                <div style="background-color: #f8f9fa; border-left: 5px solid ${type === 'training' ? '#bc0032' : '#004c97'}; padding: 15px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #333;">Session Credentials</h3>
+                    <p style="margin-bottom: 5px;">Use these to unlock the PC:</p>
+                    <table style="width: 100%;">
+                        <tr><td style="color: #666;">Username:</td><td><strong>${apiUsername}</strong></td></tr>
+                        <tr><td style="color: #666;">Password:</td><td><strong>${apiPassword}</strong></td></tr>
+                    </table>
+                </div>
 
-Schedule Details:
------------------
-Date: ${startDateTime.toLocaleDateString()}
-Time: ${timeRange}
-Location: 4700 Keele St, Petrie Building Room 020 - Science Store
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Date</td>
+                        <td style="padding: 10px;">${startDateTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Time</td>
+                        <td style="padding: 10px;">${timeRange}</td>
+                    </tr>
+                    ${type === 'training' ? `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Dept / Cost Center</td>
+                        <td style="padding: 10px;">${docData.department} / ${docData.costCenter || 'N/A'}</td>
+                    </tr>` : `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px; font-weight: bold;">Analysis Type</td>
+                        <td style="padding: 10px;">${docData.analysisType}</td>
+                    </tr>`}
+                    <tr>
+                        <td style="padding: 10px; font-weight: bold;">Admin Notes</td>
+                        <td style="padding: 10px;">${notes || 'None'}</td>
+                    </tr>
+                </table>
 
-${type === 'analysis' ? `Analysis Type: ${docData.analysisType}` : `Department: ${docData.department}`}
-${trainee2Text}
-
-System Access Credentials (if needed during session):
-Username: ${apiUsername}
-Password: ${apiPassword}
-
-Notes from Admin:
-${notes || 'None'}
-
-A calendar invitation is attached.
-
-Best regards,
-OPTIR Reservation System
-        `;
+                <p>A calendar invitation is attached.</p>
+            </div>
+            <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
+                <p style="margin: 0 0 5px;"><strong>PICSSL Lab</strong> | <a href="https://picssl-equipment.ca/" style="color: ${type === 'training' ? '#bc0032' : '#004c97'}; text-decoration: none;">https://picssl-equipment.ca/</a></p>
+                <p style="margin: 0;">4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3</p>
+            </div>
+        </div>`;
 
         // Generate ICS
         const year = startDateTime.getFullYear();
@@ -185,7 +209,8 @@ OPTIR Reservation System
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
                 to: recipients.filter(Boolean),
                 subject: subject,
-                text: emailText,
+                subject: subject,
+                html: html,
             };
 
             if (!error && value) {
@@ -200,7 +225,7 @@ OPTIR Reservation System
             await transporter.sendMail(mailOptions);
             return NextResponse.json({ message: 'Request created and scheduled successfully' });
         } else {
-            console.log("MOCK CREATE EMAIL", subject, emailText);
+            console.log("MOCK CREATE EMAIL", subject, html);
             return NextResponse.json({ message: 'Created (Mock Email)', mock: true });
         }
 

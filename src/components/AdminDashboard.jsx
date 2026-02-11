@@ -196,6 +196,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 <tr>
                                     {activeTab !== 'logs' && <th>Date Submitted</th>}
                                     {activeTab !== 'logs' && <th>Name</th>}
+                                    {(activeTab === 'analysis' || activeTab === 'training') && <th>Email</th>}
 
                                     {activeTab === 'reservations' && <th>Reserved Date</th>}
                                     {activeTab === 'reservations' && <th>Time Slots</th>}

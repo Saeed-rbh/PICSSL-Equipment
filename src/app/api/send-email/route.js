@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import * as ics from 'ics';
 import { db } from '@/lib/firebaseAdmin';
+import { toZonedTime, format, fromZonedTime } from 'date-fns-tz';
+
+const TIMEZONE = 'America/Toronto';
 
 export async function POST(req) {
     try {
@@ -170,17 +173,39 @@ export async function POST(req) {
         }
 
         // 1. Create ICS Event
-        const dateObj = new Date(selectedDate);
-        const year = dateObj.getFullYear();
-        const month = dateObj.getMonth() + 1;
-        const day = dateObj.getDate();
+        // selectedDate comes as ISO string or Date string.
+        // We know selectedSlots is array of "09:00", etc.
+        // We must construct the start time in Toronto.
 
-        // Get start hour from first slot (e.g., "09:00")
-        const startHour = parseInt(selectedSlots[0].split(':')[0]);
-        const durationHours = selectedSlots.length; // Assuming contiguous 1-hour slots
+        let targetDateStr = selectedDate;
+        if (selectedDate.includes('T')) {
+            targetDateStr = selectedDate.split('T')[0];
+        }
+
+        // Create start DateTime in Toronto
+        // We assume the user seeing "09:00" means 9:00 Toronto time.
+        // fromZonedTime takes a date string and a zone, and returns the UTC date that corresponds to that local time in that zone.
+        const startHour = selectedSlots[0].split(':')[0];
+        // Construct ISO-like string for Toronto: YYYY-MM-DDTHH:MM:SS
+        const combinedIso = `${targetDateStr}T${startHour}:00:00`;
+        const startDateTime = fromZonedTime(combinedIso, TIMEZONE);
+
+        // duration
+        const durationHours = selectedSlots.length; // contiguous check assumed
+        // For end, just add duration
+        const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
+
+        // Generate ICS: Extract components relative to Toronto
+        // toZonedTime converts the UTC date back to a date object carrying the local time values of that zone.
+        const zonedStart = toZonedTime(startDateTime, TIMEZONE);
+        const year = zonedStart.getFullYear();
+        const month = zonedStart.getMonth() + 1;
+        const day = zonedStart.getDate();
+        const hour = zonedStart.getHours();
+        const minute = zonedStart.getMinutes();
 
         const event = {
-            start: [year, month, day, startHour, 0],
+            start: [year, month, day, hour, minute],
             duration: { hours: durationHours, minutes: 0 },
             title: `OPTIR Reservation: ${fullName}`,
             description: `Reservation Details:\nUser: ${fullName} (${email})\nSupervisor: ${supervisor} (${supervisorEmail})\nSample: ${sampleName}\nTotal Cost: $${totalCost}\n\nInstrument: Optical Photothermal IR Spectroscopy`,
@@ -205,7 +230,10 @@ export async function POST(req) {
             // For now, let's log and proceed or throw. Proceeding without ICS might be safer to at least notify.
         }
 
-        const reservationSubject = `Confirmation: OPTIR Reservation - ${selectedDate.split('T')[0]}`;
+        // Format date for email using Toronto zone
+        const displayDate = format(zonedStart, 'EEEE, MMMM d, yyyy', { timeZone: TIMEZONE });
+
+        const reservationSubject = `Confirmation: OPTIR Reservation - ${targetDateStr}`;
         const html = `
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 0;">
             <div style="background-color: #e31837; padding: 20px; text-align: center;">
@@ -228,11 +256,11 @@ export async function POST(req) {
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Date</td>
-                        <td style="padding: 10px;">${dateObj.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td style="padding: 10px;">${displayDate}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Time</td>
-                        <td style="padding: 10px;">${selectedSlots[0]} - ${selectedSlots.length} Hrs</td>
+                        <td style="padding: 10px;">${selectedSlots[0]} - ${selectedSlots.length} Hrs (EST)</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Sample</td>
@@ -265,7 +293,7 @@ export async function POST(req) {
                 // Determine Calendar Name
                 const calName = 'OPTIR Reservation';
                 // Inject X-WR-CALNAME if not present (simple hack)
-                const finalIcs = value.replace('BEGIN:VCALENDAR', `BEGIN:VCALENDAR\nX-WR-CALNAME:${calName}`);
+                const finalIcs = value.replace('BEGIN:VCALENDAR', `BEGIN:VCALENDAR\nX-WR-CALNAME:${calName}\nX-WR-TIMEZONE:${TIMEZONE}`);
 
                 mailOptions.icalEvent = {
                     filename: 'invite.ics',

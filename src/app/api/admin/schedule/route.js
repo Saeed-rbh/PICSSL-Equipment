@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import * as ics from 'ics';
 import { db } from '@/lib/firebaseAdmin';
+import { toZonedTime, format, fromZonedTime } from 'date-fns-tz';
+
+const TIMEZONE = 'America/Toronto';
 
 export async function POST(req) {
     try {
@@ -12,22 +15,34 @@ export async function POST(req) {
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
         }
 
-        const scheduledTime = new Date(scheduleDate);
-        const scheduledEndTime = new Date(scheduleEndDate);
+        // Input comes as ISO strings from the frontend, but possibly in local browser time which might differ.
+        // Or if they are simple date-time strings from input type="datetime-local" (Wait, frontend uses type="date" and "time", then combines to ISO).
+        // Let's re-verify frontend:
+        // const startDateTime = new Date(`${date}T${startTime}`); -> This uses browser local time, then .toISOString().
+        // So `scheduleDate` is an ISO string representing the browser's selected time.
+        // If the admin is in Toronto, browser time is Toronto. .toISOString() converts to UTC.
+        // If we trust the ISO string is the correct absolute time (i.e. Admin picked 9am Toronto, browser sent UTC for 9am Toronto), then we just use it as is?
+        // User complaint: "Sending is not in correct time zone". 
+        // If Server is UTC, and we generate ICS using `date.getHours()` on the UTC date, it extracts UTC hours.
+        // We need to extract TORONTO hours for the ICS "floating" time or specify timezone.
 
-        // Calculate duration
-        const durationMs = scheduledEndTime - scheduledTime;
+        // So, we treat the input ISO as the correct absolute timestamp.
+        const headerDate = new Date(scheduleDate);
+        const headerEndDate = new Date(scheduleEndDate);
+
+        // Calculate duration (Difference is independent of zone)
+        const durationMs = headerEndDate - headerDate;
         const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
         const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
-        // 1. Update Firestore
+        // 1. Update Firestore (Store ISOs as is, they are absolute)
         const apiUsername = `optir-${Math.floor(1000 + Math.random() * 9000)}`;
         const apiPassword = Math.random().toString(36).slice(-8);
 
         await db.collection(collection).doc(id).update({
             status: 'scheduled',
-            scheduledDate: scheduledTime.toISOString(),
-            scheduledEndDate: scheduledEndTime.toISOString(),
+            scheduledDate: headerDate.toISOString(),
+            scheduledEndDate: headerEndDate.toISOString(),
             adminNotes: notes || '',
             generatedUsername: apiUsername,
             generatedPassword: apiPassword
@@ -39,7 +54,6 @@ export async function POST(req) {
         const { fullName, email, trainee2Name, trainee2Email, supervisorEmail, analysisType, department } = data;
 
         // 3. Send Email
-        // Configure Transporter
         const SMTP_HOST = process.env.SMTP_HOST || process.env.smtp_host;
         const SMTP_PORT = process.env.SMTP_PORT || process.env.smtp_port;
         const SMTP_USER = process.env.SMTP_USER || process.env.smtp_user;
@@ -56,9 +70,14 @@ export async function POST(req) {
         }
 
         const typeLabel = collection === 'training_requests' ? 'Training Session' : 'Sample Analysis';
-        const subject = `Confirmed: OPTIR ${typeLabel} - ${scheduledTime.toLocaleDateString()}`;
 
-        const timeRange = `${scheduledTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${scheduledEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        // Format for Display using Toronto Time
+        const displayDate = format(toZonedTime(headerDate, TIMEZONE), 'EEEE, MMMM d, yyyy', { timeZone: TIMEZONE });
+        const displayStartTime = format(toZonedTime(headerDate, TIMEZONE), 'hh:mm a', { timeZone: TIMEZONE });
+        const displayEndTime = format(toZonedTime(headerEndDate, TIMEZONE), 'hh:mm a', { timeZone: TIMEZONE });
+        const timeRange = `${displayStartTime} - ${displayEndTime} (EST)`;
+
+        const subject = `Confirmed: OPTIR ${typeLabel} - ${displayDate}`;
 
         const html = `
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 0;">
@@ -82,7 +101,7 @@ export async function POST(req) {
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Date</td>
-                        <td style="padding: 10px;">${scheduledTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td style="padding: 10px;">${displayDate}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Time</td>
@@ -111,12 +130,13 @@ export async function POST(req) {
             </div>
         </div>`;
 
-        // Generate ICS
-        const year = scheduledTime.getFullYear();
-        const month = scheduledTime.getMonth() + 1;
-        const day = scheduledTime.getDate();
-        const hour = scheduledTime.getHours();
-        const minute = scheduledTime.getMinutes();
+        // Generate ICS: Extract components relative to Toronto
+        const zonedStart = toZonedTime(headerDate, TIMEZONE);
+        const year = zonedStart.getFullYear();
+        const month = zonedStart.getMonth() + 1;
+        const day = zonedStart.getDate();
+        const hour = zonedStart.getHours();
+        const minute = zonedStart.getMinutes();
 
         const event = {
             start: [year, month, day, hour, minute],
@@ -151,7 +171,7 @@ export async function POST(req) {
             };
 
             if (!error && value) {
-                const finalIcs = value.replace('BEGIN:VCALENDAR', 'BEGIN:VCALENDAR\nX-WR-CALNAME:OPTIR Schedule');
+                const finalIcs = value.replace('BEGIN:VCALENDAR', 'BEGIN:VCALENDAR\nX-WR-CALNAME:OPTIR Schedule\nX-WR-TIMEZONE:America/Toronto');
                 mailOptions.icalEvent = {
                     filename: 'invite.ics',
                     method: 'request',

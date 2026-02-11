@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import * as ics from 'ics';
 import { db } from '@/lib/firebaseAdmin';
+import { toZonedTime, format, fromZonedTime } from 'date-fns-tz';
+
+const TIMEZONE = 'America/Toronto';
 
 export async function POST(req) {
     try {
@@ -24,16 +27,21 @@ export async function POST(req) {
             notes
         } = body;
 
-        // Construct Date Objects
-        const startDateTime = new Date(`${scheduleDate}T${startTime}`);
-        const endDateTime = new Date(`${scheduleDate}T${endTime}`);
+        // Construct Date Objects in Toronto Time
+        // We assume input date/time strings are meant to be in Toronto time.
+        const startIso = `${scheduleDate}T${startTime}:00`;
+        const endIso = `${scheduleDate}T${endTime}:00`;
 
-        if (endDateTime <= startDateTime) {
+        // Create Date objects representing that time in that zone
+        const scheduleStart = fromZonedTime(startIso, TIMEZONE);
+        const scheduleEnd = fromZonedTime(endIso, TIMEZONE);
+
+        if (scheduleEnd <= scheduleStart) {
             return NextResponse.json({ message: 'End time must be after start time' }, { status: 400 });
         }
 
         // Calculate Duration
-        const durationMs = endDateTime - startDateTime;
+        const durationMs = scheduleEnd - scheduleStart;
         const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
         const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
@@ -49,8 +57,8 @@ export async function POST(req) {
             supervisorEmail,
             status: 'scheduled',
             createdAt: timestamp,
-            scheduledDate: startDateTime.toISOString(),
-            scheduledEndDate: endDateTime.toISOString(),
+            scheduledDate: scheduleStart.toISOString(), // Store as absolute UTC
+            scheduledEndDate: scheduleEnd.toISOString(),
             adminNotes: notes || '',
             generatedUsername: apiUsername,
             generatedPassword: apiPassword
@@ -120,8 +128,13 @@ export async function POST(req) {
             });
         }
 
-        const subject = `Confirmed: OPTIR ${typeLabel} - ${startDateTime.toLocaleDateString()}`;
-        const timeRange = `${startDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        // Formatting for Email Display (Convert back to Toronto Time for string)
+        const displayDate = format(toZonedTime(scheduleStart, TIMEZONE), 'EEEE, MMMM d, yyyy', { timeZone: TIMEZONE });
+        const displayStartTime = format(toZonedTime(scheduleStart, TIMEZONE), 'hh:mm a', { timeZone: TIMEZONE });
+        const displayEndTime = format(toZonedTime(scheduleEnd, TIMEZONE), 'hh:mm a', { timeZone: TIMEZONE });
+        const timeRange = `${displayStartTime} - ${displayEndTime} (EST)`;
+
+        const subject = `Confirmed: OPTIR ${typeLabel} - ${displayDate}`;
 
         const html = `
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #ddd; padding: 0;">
@@ -145,7 +158,7 @@ export async function POST(req) {
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Date</td>
-                        <td style="padding: 10px;">${startDateTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td style="padding: 10px;">${displayDate}</td>
                     </tr>
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 10px; font-weight: bold;">Time</td>
@@ -174,12 +187,13 @@ export async function POST(req) {
             </div>
         </div>`;
 
-        // Generate ICS
-        const year = startDateTime.getFullYear();
-        const month = startDateTime.getMonth() + 1;
-        const day = startDateTime.getDate();
-        const hour = startDateTime.getHours();
-        const minute = startDateTime.getMinutes();
+        // Generate ICS within Toronto Time
+        const zonedStart = toZonedTime(scheduleStart, TIMEZONE);
+        const year = zonedStart.getFullYear();
+        const month = zonedStart.getMonth() + 1;
+        const day = zonedStart.getDate();
+        const hour = zonedStart.getHours();
+        const minute = zonedStart.getMinutes();
 
         const event = {
             start: [year, month, day, hour, minute],
@@ -214,7 +228,7 @@ export async function POST(req) {
             };
 
             if (!error && value) {
-                const finalIcs = value.replace('BEGIN:VCALENDAR', 'BEGIN:VCALENDAR\nX-WR-CALNAME:OPTIR Schedule');
+                const finalIcs = value.replace('BEGIN:VCALENDAR', 'BEGIN:VCALENDAR\nX-WR-CALNAME:OPTIR Schedule\nX-WR-TIMEZONE:America/Toronto');
                 mailOptions.icalEvent = {
                     filename: 'invite.ics',
                     method: 'request',

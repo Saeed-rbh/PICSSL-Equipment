@@ -127,7 +127,7 @@ export async function POST(req) {
             url: 'https://picssl-equipment.ca/',
             status: 'CONFIRMED',
             method: 'REQUEST',
-            organizer: { name: 'OPTIR System', email: 'reservations@picssl.yorku.ca' },
+            organizer: { name: 'OPTIR System', email: 'picssl.equipment@gmail.com' },
             attendees: [
                 { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' }
             ]
@@ -144,8 +144,8 @@ export async function POST(req) {
         if (transporter) {
             const { error, value } = ics.createEvent(event);
             const mailOptions = {
-                from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                to: [email, trainee2Email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"].filter(Boolean),
+                from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
+                to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, trainee2Email, supervisorEmail].filter(Boolean),
                 subject: subject,
                 html: html,
             };

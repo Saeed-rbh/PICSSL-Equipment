@@ -67,7 +67,7 @@ export async function POST(req) {
 
             if (transporter) {
                 await transporter.sendMail({
-                    from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
+                    from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
                     to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
                     subject: subject,
                     html: html, // HTML Body
@@ -134,7 +134,7 @@ export async function POST(req) {
 
             if (transporter) {
                 await transporter.sendMail({
-                    from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
+                    from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
                     to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
                     subject: subject,
                     html: html,
@@ -189,8 +189,9 @@ export async function POST(req) {
             geo: { lat: 43.7735, lon: -79.5019 },
             categories: ['Lab Reservation', 'Scientific'],
             status: 'CONFIRMED',
+            method: 'REQUEST',
             busyStatus: 'BUSY',
-            organizer: { name: 'OPTIR System', email: 'reservations@picssl.yorku.ca' },
+            organizer: { name: 'OPTIR System', email: 'picssl.equipment@gmail.com' },
             attendees: [
                 { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' },
                 { name: supervisor, email: supervisorEmail, role: 'OPT-PARTICIPANT' }
@@ -254,8 +255,8 @@ export async function POST(req) {
 
         if (transporter) {
             const mailOptions = {
-                from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                to: [email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"],
+                from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
+                to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
                 subject: reservationSubject,
                 html: html, // HTML
             };
@@ -266,13 +267,11 @@ export async function POST(req) {
                 // Inject X-WR-CALNAME if not present (simple hack)
                 const finalIcs = value.replace('BEGIN:VCALENDAR', `BEGIN:VCALENDAR\nX-WR-CALNAME:${calName}`);
 
-                mailOptions.attachments = [
-                    {
-                        filename: 'invite.ics',
-                        content: finalIcs,
-                        contentType: 'text/calendar; method=REQUEST; charset=UTF-8'
-                    }
-                ];
+                mailOptions.icalEvent = {
+                    filename: 'invite.ics',
+                    method: 'request',
+                    content: finalIcs
+                };
             }
 
             const info = await transporter.sendMail(mailOptions);

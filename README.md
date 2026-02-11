@@ -106,7 +106,7 @@ If the internet is down or a user is stuck:
 ## 📧 Email Notifications
 
 ### Recipients
-All system emails are sent from `reservations@picssl.yorku.ca`.
+All system emails are sent from `picssl.equipment@gmail.com`.
 The following parties receive notifications for **Training**, **Analysis**, and **Reservation** actions:
 1.  **Arabha@yorku.ca** (Admin)
 2.  **rrizvi@yorku.ca** (Admin)

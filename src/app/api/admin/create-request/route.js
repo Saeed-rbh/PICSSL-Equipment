@@ -58,7 +58,7 @@ export async function POST(req) {
 
         let typeLabel = '';
         let trainee2Text = '';
-        let recipients = [email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"];
+        let recipients = ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail];
 
         if (type === 'training') {
             collectionName = 'training_requests';
@@ -190,7 +190,7 @@ export async function POST(req) {
             url: 'https://picssl-equipment.ca/',
             status: 'CONFIRMED',
             method: 'REQUEST',
-            organizer: { name: 'OPTIR System', email: 'reservations@picssl.yorku.ca' },
+            organizer: { name: 'OPTIR System', email: 'picssl.equipment@gmail.com' },
             attendees: [
                 { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' }
             ]
@@ -207,7 +207,7 @@ export async function POST(req) {
         if (transporter) {
             const { error, value } = ics.createEvent(event);
             const mailOptions = {
-                from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
+                from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
                 to: recipients.filter(Boolean),
                 subject: subject,
                 html: html,

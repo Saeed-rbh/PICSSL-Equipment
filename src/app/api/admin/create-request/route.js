@@ -27,14 +27,32 @@ export async function POST(req) {
             notes
         } = body;
 
+        console.log("DEBUG: Received request:", { scheduleDate, startTime, endTime });
+        console.log("DEBUG: Timezone:", TIMEZONE);
+        try {
+            console.log("DEBUG: date-fns-tz exports:", Object.keys(require('date-fns-tz')));
+        } catch (e) {
+            console.log("DEBUG: Could not log exports:", e.message);
+        }
+
         // Construct Date Objects in Toronto Time
-        // We assume input date/time strings are meant to be in Toronto time.
-        const startIso = `${scheduleDate}T${startTime}:00`;
-        const endIso = `${scheduleDate}T${endTime}:00`;
+        // Ensure startTime/endTime don't have seconds or handle them
+        const cleanStart = startTime.split(':').slice(0, 2).join(':'); // Force HH:MM
+        const cleanEnd = endTime.split(':').slice(0, 2).join(':');
+
+        const startIso = `${scheduleDate}T${cleanStart}:00`;
+        const endIso = `${scheduleDate}T${cleanEnd}:00`;
+
+        console.log("DEBUG: Constructed ISO strings:", { startIso, endIso });
 
         // Create Date objects representing that time in that zone
         const scheduleStart = fromZonedTime(startIso, TIMEZONE);
         const scheduleEnd = fromZonedTime(endIso, TIMEZONE);
+
+        console.log("DEBUG: Converted Dates (UTC):", {
+            start: scheduleStart.toISOString(),
+            end: scheduleEnd.toISOString()
+        });
 
         if (scheduleEnd <= scheduleStart) {
             return NextResponse.json({ message: 'End time must be after start time' }, { status: 400 });
@@ -66,7 +84,7 @@ export async function POST(req) {
 
         let typeLabel = '';
         let trainee2Text = '';
-        let recipients = ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail];
+        let recipients = ["Arabha@yorku.ca", email, supervisorEmail];
 
         if (type === 'training') {
             collectionName = 'training_requests';

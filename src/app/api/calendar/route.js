@@ -14,15 +14,35 @@ export async function GET(request) {
 
         let allEvents = [];
 
-        // 1. Process Reservations (Already has slots)
+        // 1. Process Reservations (Refined)
         reservationsSnap.docs.forEach(doc => {
             const data = doc.data();
-            allEvents.push({
-                id: doc.id,
-                date: data.selectedDate, // ISO String
-                time: data.selectedSlots || [],
-                type: 'reservation'
-            });
+            const slots = data.selectedSlots || [];
+            if (slots.length > 0) {
+                // Calculate start and end times from slots
+                // Assumes slots are sorted and contiguous like "09:00", "10:00"
+                const sortedSlots = [...slots].sort();
+                const startSlot = sortedSlots[0];
+                const endSlotCount = sortedSlots.length;
+
+                // Construct basic ISO strings for start/end if possible, or just formatted time
+                // We'll return readable start/end for display
+                const startTime = startSlot;
+                const startHour = parseInt(startSlot.split(':')[0], 10);
+                const endHour = startHour + endSlotCount;
+                const endTime = `${endHour.toString().padStart(2, '0')}:00`;
+
+                allEvents.push({
+                    id: doc.id,
+                    date: data.selectedDate, // ISO String or Date String
+                    time: slots,
+                    start: startTime,
+                    end: endTime,
+                    title: `Reservation: ${data.fullName}`,
+                    type: 'reservation',
+                    user: data.fullName
+                });
+            }
         });
 
         // Helper to generate slots from start/end dates
@@ -30,23 +50,31 @@ export async function GET(request) {
             const start = new Date(startIso);
             const end = new Date(endIso);
             const slots = [];
-
-            // Iterate by hour
             let current = new Date(start);
-            // Round down to nearest hour for start? 
-            // If training starts at 9:30, it blocks the 9-10 slot? Or maybe just 10?
-            // Conservative: If it overlaps with an hour, block it.
-            // Simplification: The system seems to use aligned hours (09:00). 
-            // We'll extract the hour part.
-
-            // Loop until we reach end time
             while (current < end) {
                 const h = current.getHours().toString().padStart(2, '0');
-                const m = '00'; // Force align to top of hour for blocking
+                const m = '00';
                 slots.push(`${h}:${m}`);
                 current.setHours(current.getHours() + 1);
             }
             return slots;
+        };
+
+        // Helper to format ISO to HH:MM (Local/Toronto approximation if needed, but here we likely rely on stored UTC)
+        // Actually, training/analysis keys are likely absolute ISOs.
+        // We want to return "HH:MM" for the calendar display.
+        // If stored as UTC, we should convert to Toronto time string.
+        // We can use a simple helper if we don't import date-fns-tz here (to avoid overhead if not needed), 
+        // OR just return the full ISO and let frontend format.
+        // Let's return full ISO for start/end and let frontend handle formatted time?
+        // LabCalendar uses `res.time`. ReservationFlow uses `data.data.flatMap(r => r.time)`.
+        // LabCalendar display uses `res.time` string.
+        // I will add `displayTime` string.
+
+        const getDisplayTime = (isoString) => {
+            // Quick hack: assume the ISO is what we want to display roughly, or convert.
+            // Better: Return the ISO, let frontend format.
+            return isoString;
         };
 
         // 2. Process Training
@@ -56,9 +84,13 @@ export async function GET(request) {
                 const slots = getSlotsFromRange(data.scheduledDate, data.scheduledEndDate);
                 allEvents.push({
                     id: doc.id,
-                    date: data.scheduledDate, // Use start date for the key
+                    date: data.scheduledDate,
                     time: slots,
-                    type: 'training'
+                    start: data.scheduledDate, // Full ISO
+                    end: data.scheduledEndDate, // Full ISO
+                    title: `Training: ${data.fullName}`,
+                    type: 'training',
+                    user: data.fullName
                 });
             }
         });
@@ -72,7 +104,11 @@ export async function GET(request) {
                     id: doc.id,
                     date: data.scheduledDate,
                     time: slots,
-                    type: 'analysis'
+                    start: data.scheduledDate,
+                    end: data.scheduledEndDate,
+                    title: `Analysis: ${data.fullName}`,
+                    type: 'analysis',
+                    user: data.fullName
                 });
             }
         });

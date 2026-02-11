@@ -11,7 +11,6 @@ export default function LabCalendar() {
     const [loading, setLoading] = useState(true);
 
     // Fetch Data
-
     useEffect(() => {
         const fetchReservations = async () => {
             try {
@@ -44,25 +43,51 @@ export default function LabCalendar() {
     };
 
     const getReservationsForDate = (date) => {
-        // Normalize date to YYYY-MM-DD
-        // Note: The date passed in is local time 00:00. 
-        // We match against the ISO string stored in DB (e.g., "2023-10-27T00:00:00.000Z") or just simple string match if we stored raw date string.
-        // In API we stored 'selectedDate' which likely comes from toLocaleDateString() or similar. 
-        // Let's rely on standard comparison:
-
-        const targetDate = date.toLocaleDateString(); // Local format matching what we likely saved? 
-        // Actually, looking at ReservationFlow, we send "selectedDate" object. JSON.stringify converts it to ISO string.
-        // So we need to match the YYYY-MM-DD part of the ISO string.
-
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const targetStr = `${year}-${month}-${day}`;
 
+        // Return EVENTS, not slots
         return reservations.filter(r => {
             if (!r.date) return false;
+            // r.date might be full ISO. check startsWith.
             return r.date.startsWith(targetStr);
-        }).flatMap(r => r.time.map(t => ({ time: t, user: r.user })));
+        }).map(r => {
+            // Format start/end for display
+            let displayTime = '';
+
+            if (r.type === 'reservation') {
+                // API provides start/end as HH:MM strings for reservations (or derived)
+                // If API hasn't been reloaded/restarted, might be missing, but we updated it.
+                // Fallback to slots if start missing?
+                if (r.start && r.end) {
+                    displayTime = `${r.start} - ${r.end}`;
+                } else if (r.time && r.time.length > 0) {
+                    // Fallback mechanism (unlikely if API is updated)
+                    const sorted = [...r.time].sort();
+                    displayTime = `${sorted[0]} - ${sorted.length} hrs`;
+                }
+            } else {
+                // Training / Analysis have ISO strings
+                // Parse and format to HH:MM in Toronto Time
+                try {
+                    const s = new Date(r.start);
+                    const e = new Date(r.end);
+                    // Force Toronto time display
+                    const sTime = s.toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hour12: false });
+                    const eTime = e.toLocaleTimeString('en-US', { timeZone: 'America/Toronto', hour: '2-digit', minute: '2-digit', hour12: false });
+                    displayTime = `${sTime} - ${eTime}`;
+                } catch (err) {
+                    displayTime = 'Time Error';
+                }
+            }
+
+            return {
+                ...r,
+                displayTime
+            };
+        });
     };
 
     const renderCalendar = () => {
@@ -200,7 +225,7 @@ export default function LabCalendar() {
                                         borderRadius: 'var(--radius-md)',
                                         borderLeft: '4px solid var(--accent-primary)'
                                     }}>
-                                        <span style={{ fontWeight: 'bold' }}>{res.time}</span>
+                                        <span style={{ fontWeight: 'bold' }}>{res.displayTime}</span>
                                         <span style={{ color: 'var(--text-secondary)', wordBreak: 'break-word', textAlign: 'right', maxWidth: '60%' }}>{res.user}</span>
                                     </div>
                                 ))}

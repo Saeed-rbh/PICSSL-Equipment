@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
+import { toZonedTime } from 'date-fns-tz';
 
 export async function POST(req) {
     try {
@@ -42,95 +43,108 @@ export async function POST(req) {
         const doc = snapshot.docs[0];
         const reservation = doc.data();
 
-        // Check if Time is Valid
-        // Logic:
-        // selectedDate: "2023-10-27T00:00:00.000Z"
-        // selectedSlots: ["10:00 AM", "11:00 AM"]
-        // We need to parse this to check if "NOW" is within the window.
-        // Simplified for this task: Just return the booked info and let the client decide, 
-        // OR do a basic check here. Let's do a basic check.
-
-        // TIME VALIDATION (Strict Toronto Time)
+        // TIME VALIDATION (Robust Toronto Time)
         // We normalize everything to "Lab Wall Time" to avoid UTC/Server timezone offsets causing early/late access.
-
-        function getTorontoTimeComponents(dateObj) {
-            const options = {
-                timeZone: 'America/Toronto', hour12: false,
-                year: 'numeric', month: 'numeric', day: 'numeric',
-                hour: 'numeric', minute: 'numeric', second: 'numeric'
-            };
-            // formatToParts is robust
-            const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(dateObj);
-            const p = {};
-            parts.forEach(({ type, value }) => p[type] = value);
-
-            // Return a Date object where the internal numbers match Toronto Wall Time
-            return new Date(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-        }
+        const TIMEZONE = 'America/Toronto';
 
         // 1. Get NOW in Toronto Time
         const nowServer = new Date();
-        const nowLab = getTorontoTimeComponents(nowServer);
+        const nowToronto = toZonedTime(nowServer, TIMEZONE);
 
-        // 2. Parse Reservation Date (Assume stored YYYY-MM-DD or ISO)
-        const resDate = new Date(reservation.selectedDate);
-        // We only want the Year/Month/Day from this.
-        // NOTE: selectedDate string usually "2023-10-27". 3 PM user might mean 2023-10-27.
-        // We need to be careful if selectedDate was stored with timezone.
-        // Let's assume the string YYYY-MM-DD is the Truth for the Lab Day.
-        // We extract Y, M, D from the string directly to be safe from UTC shifts.
-        const dateStr = reservation.selectedDate.split('T')[0]; // "2023-10-27"
-        const [rY, rM, rD] = dateStr.split('-').map(Number); // [2023, 10, 27]
+        // 2. Determine "Lab Day" from stored date
+        // reservation.selectedDate is UTC ISO (e.g., 2026-02-12T17:30:00Z -> 12:30 Est)
+        // If stored as UTC, converting to Toronto gives the correct local date.
+        // e.g. 2026-02-13T02:00:00Z (9 PM Est on 12th) -> Toronto Date is 12th.
+
+        let reservationDateToronto;
+        if (reservation.selectedDate) {
+            reservationDateToronto = toZonedTime(reservation.selectedDate, TIMEZONE);
+        } else {
+            // Fallback if missing (shouldn't happen for valid bookings)
+            console.warn(`Reservation ${doc.id} missing selectedDate`);
+            return NextResponse.json({ success: false, message: 'Invalid Reservation Data' });
+        }
+
+        const rY = reservationDateToronto.getFullYear();
+        const rM = reservationDateToronto.getMonth(); // 0-indexed
+        const rD = reservationDateToronto.getDate();
 
         // 3. Parse Slots to find Start/End Lab Time
         const slots = reservation.selectedSlots || [];
         if (slots.length === 0) return NextResponse.json({ success: false, message: 'No slots booked.' });
 
-        const parseSlotToLabTime = (timeStr) => {
-            const [time, modifier] = timeStr.split(' ');
+        // Helper to parse "10:00 AM" to hours/minutes
+        const getSlotHours = (timeStr) => {
+            const [time, modifier] = timeStr.trim().split(' ');
             let [hours, minutes] = time.split(':');
             hours = parseInt(hours);
             if (hours === 12 && modifier === 'AM') hours = 0;
             if (hours !== 12 && modifier === 'PM') hours += 12;
-
-            // Construct using the date parts + slot time
-            return new Date(rY, rM - 1, rD, hours, parseInt(minutes), 0);
+            return { h: hours, m: parseInt(minutes) };
         };
 
-        const startTimeLab = parseSlotToLabTime(slots[0]);
-        const endTimeLab = parseSlotToLabTime(slots[slots.length - 1]);
-        endTimeLab.setHours(endTimeLab.getHours() + 1); // +1 Hour duration
+        const startSlot = getSlotHours(slots[0]);
+        const endSlot = getSlotHours(slots[slots.length - 1]);
 
-        console.log(`Verifying Access: LabNow=${nowLab.toLocaleString()} | Start=${startTimeLab.toLocaleString()} | End=${endTimeLab.toLocaleString()}`);
+        // Construct Start/End Time objects in Toronto Time context
+        // We act "as if" we are in Toronto.
+        // By constructing a Date with (rY, rM, rD, h, m), the JS runtime (if local) treats it as local.
+        // BUT we are comparing against 'nowToronto' which is a Date object where properties match Toronto time.
+        // So we should construct start/end similarly.
 
-        // STRICT CHECK (0 Minutes Buffer)
-        // If now is even 1 second before Start, reject.
-        if (nowLab < startTimeLab) {
+        // Example: 
+        // Real Time: 12:00 UTC (07:00 Toronto).
+        // nowToronto object internals: 07:00.
+        // Booked: 09:00 Toronto.
+        // startTimeToronto internals: 09:00.
+        // 07:00 < 09:00. Correct.
+
+        // Note: new Date(Y, M, D, h, m) uses LOCAL SERVER TIMEZONE for construction.
+        // If server is UTC, it builds a UTC date.
+        // nowToronto (from toZonedTime) is a Date where getHours() etc returns the Zoned time?
+        // Wait, toZonedTime returns a Date where *UTC methods* returns the zoned time?
+        // Docs: "The internal time value is adjusted so that getUTC* methods return the components of the zoned time."
+        // So `nowToronto.getUTCHours()` is the Toronto hour.
+
+        // Therefore, we must construct our start/end comparison dates such that their getUTC* methods return the target Toronto time.
+        // best way: Date.UTC(Y, M, D, h, m).
+
+        const startTimeToronto = new Date(Date.UTC(rY, rM, rD, startSlot.h, startSlot.m, 0));
+        const endTimeToronto = new Date(Date.UTC(rY, rM, rD, endSlot.h, endSlot.m, 0));
+        endTimeToronto.setHours(endTimeToronto.getHours() + 1); // +1 Hour duration (Date.UTC handles rollover)
+
+        // Debug Log
+        console.log(`Verifying Access [${username}]: NowToronto=${nowToronto.toISOString()} | StartToronto=${startTimeToronto.toISOString()} | EndToronto=${endTimeToronto.toISOString()}`);
+
+        // Compare Timestamps
+        // Since both are "shifted" to correct wall time in UTC representation, simple comparison works.
+        if (nowToronto.getTime() < startTimeToronto.getTime()) {
+            // Calculate time difference for friendly message (optional)
             return NextResponse.json({
                 success: false, // Client expects false to show message red
                 valid: false,
-                message: `Too Early. Session starts at ${startTimeLab.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+                message: `Too Early. Session starts at ${slots[0]}.`
             });
         }
 
-        if (nowLab > endTimeLab) {
+        if (nowToronto.getTime() > endTimeToronto.getTime()) {
             return NextResponse.json({
                 success: false,
                 valid: false,
-                message: `Session Expired. Session ended at ${endTimeLab.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`
+                message: `Session Expired. Session ended at ${endTimeToronto.getUTCHours()}:${endTimeToronto.getUTCMinutes() > 9 ? endTimeToronto.getUTCMinutes() : '0' + endTimeToronto.getUTCMinutes()}.`
             });
         }
 
         return NextResponse.json({
             success: true,
             valid: true,
-            isTimeValid: true,
+            isTimeValid: true, // Legacy field
             message: 'Credentials verified',
             data: {
                 id: doc.id,
                 fullName: reservation.fullName,
                 email: reservation.email,
-                bookedDate: reservation.selectedDate,
+                bookedDate: reservation.selectedDate, // Return original for client
                 bookedSlots: reservation.selectedSlots,
                 picsslGroup: reservation.picsslGroup || false
             }

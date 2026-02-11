@@ -68,7 +68,7 @@ export async function POST(req) {
             if (transporter) {
                 await transporter.sendMail({
                     from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                    to: ["Arabha@yorku.ca", email, supervisorEmail],
+                    to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
                     subject: subject,
                     html: html, // HTML Body
                 });
@@ -135,7 +135,7 @@ export async function POST(req) {
             if (transporter) {
                 await transporter.sendMail({
                     from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                    to: ["Arabha@yorku.ca", email, supervisorEmail],
+                    to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail],
                     subject: subject,
                     html: html,
                 });
@@ -255,7 +255,7 @@ export async function POST(req) {
         if (transporter) {
             const mailOptions = {
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                to: [email, supervisorEmail, "Arabha@yorku.ca"],
+                to: [email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"],
                 subject: reservationSubject,
                 html: html, // HTML
             };

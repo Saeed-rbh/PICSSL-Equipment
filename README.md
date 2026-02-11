@@ -109,8 +109,9 @@ If the internet is down or a user is stuck:
 All system emails are sent from `reservations@picssl.yorku.ca`.
 The following parties receive notifications for **Training**, **Analysis**, and **Reservation** actions:
 1.  **Arabha@yorku.ca** (Admin)
-2.  **Applicant** (The user making the request)
-3.  **Supervisor** (The supervisor email provided in the form)
+2.  **rrizvi@yorku.ca** (Admin)
+3.  **Applicant** (The user making the request)
+4.  **Supervisor** (The supervisor email provided in the form)
 
 ### Email Templates
 

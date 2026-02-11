@@ -58,7 +58,7 @@ export async function POST(req) {
 
         let typeLabel = '';
         let trainee2Text = '';
-        let recipients = [email, supervisorEmail, "Arabha@yorku.ca"];
+        let recipients = [email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"];
 
         if (type === 'training') {
             collectionName = 'training_requests';
@@ -186,9 +186,10 @@ export async function POST(req) {
             duration: { hours: durationHours, minutes: durationMinutes },
             title: `OPTIR ${typeLabel}: ${fullName}${docData.trainee2Name ? ` & ${docData.trainee2Name}` : ''}`,
             description: `Scheduled ${typeLabel}\n\nTime: ${timeRange}\nNotes: ${notes || ''}\n\nCredentials:\nUser: ${apiUsername}\nPass: ${apiPassword}${docData.trainee2Name ? `\n\nTrainee 2: ${docData.trainee2Name}` : ''}`,
-            location: '4700 Keele St, Petrie Building Room 020 - Science Store, Toronto, Ontario M3J 1P3, Canada',
-            url: 'http://picssl.yorku.ca',
+            location: '4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3',
+            url: 'https://picssl-equipment.ca/',
             status: 'CONFIRMED',
+            method: 'REQUEST',
             organizer: { name: 'OPTIR System', email: 'reservations@picssl.yorku.ca' },
             attendees: [
                 { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' }
@@ -209,17 +210,16 @@ export async function POST(req) {
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
                 to: recipients.filter(Boolean),
                 subject: subject,
-                subject: subject,
                 html: html,
             };
 
             if (!error && value) {
                 const finalIcs = value.replace('BEGIN:VCALENDAR', 'BEGIN:VCALENDAR\nX-WR-CALNAME:OPTIR Schedule');
-                mailOptions.attachments = [{
+                mailOptions.icalEvent = {
                     filename: 'invite.ics',
-                    content: finalIcs,
-                    contentType: 'text/calendar; method=REQUEST; charset=UTF-8'
-                }];
+                    method: 'request',
+                    content: finalIcs
+                };
             }
 
             await transporter.sendMail(mailOptions);

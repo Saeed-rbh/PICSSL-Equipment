@@ -126,6 +126,7 @@ export async function POST(req) {
             location: '4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3',
             url: 'https://picssl-equipment.ca/',
             status: 'CONFIRMED',
+            method: 'REQUEST',
             organizer: { name: 'OPTIR System', email: 'reservations@picssl.yorku.ca' },
             attendees: [
                 { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' }
@@ -144,18 +145,18 @@ export async function POST(req) {
             const { error, value } = ics.createEvent(event);
             const mailOptions = {
                 from: '"OPTIR Reservation System" <reservations@picssl.yorku.ca>',
-                to: [email, trainee2Email, supervisorEmail, "Arabha@yorku.ca"].filter(Boolean),
+                to: [email, trainee2Email, supervisorEmail, "Arabha@yorku.ca", "rrizvi@yorku.ca"].filter(Boolean),
                 subject: subject,
                 html: html,
             };
 
             if (!error && value) {
                 const finalIcs = value.replace('BEGIN:VCALENDAR', 'BEGIN:VCALENDAR\nX-WR-CALNAME:OPTIR Schedule');
-                mailOptions.attachments = [{
+                mailOptions.icalEvent = {
                     filename: 'invite.ics',
-                    content: finalIcs,
-                    contentType: 'text/calendar; method=REQUEST; charset=UTF-8'
-                }];
+                    method: 'request',
+                    content: finalIcs
+                };
             }
 
             await transporter.sendMail(mailOptions);

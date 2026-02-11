@@ -1,0 +1,18 @@
+[dotenv@17.2.4] injecting env (5) from .env.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+Searching for records...
+[
+  {
+    "id": "X31MiHihA6jViq9xEoBC",
+    "collection": "training_requests",
+    "fullName": "Rafael Corpuz",
+    "start": "2026-02-12T15:30:00.000Z",
+    "end": "2026-02-12T18:30:00.000Z"
+  },
+  {
+    "id": "fY7eCqPBky9iMRe9cIjn",
+    "collection": "training_requests",
+    "fullName": "Luna Marouf",
+    "start": "2026-02-12T12:30:00.000Z",
+    "end": "2026-02-12T15:30:00.000Z"
+  }
+]

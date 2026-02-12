@@ -320,46 +320,48 @@ export default function ReservationFlow() {
                         />
                     </div>
 
-                    <div style={{ marginTop: '2rem', marginBottom: '1rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Payment / Cost</h3>
-                        <div style={{ marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Instrument Rate:</span>
-                                <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>$50 CAD / hour</span>
+                    {!formData.isPicsslGroup && (
+                        <div style={{ marginTop: '2rem', marginBottom: '1rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Payment / Cost</h3>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Instrument Rate:</span>
+                                    <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>$50 CAD / hour</span>
+                                </div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                    * Daily cap of $250 CAD (5 hours). Operator assistance adds $40 CAD/hr.
+                                </div>
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                * Daily cap of $250 CAD (5 hours). Operator assistance adds $40 CAD/hr.
-                            </div>
-                        </div>
 
 
-                        <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <input
-                                type="checkbox"
-                                id="requestOperator"
-                                checked={formData.requestOperator}
-                                onChange={(e) => setFormData({ ...formData, requestOperator: e.target.checked })}
-                                style={{ marginTop: '0.25rem' }}
+                            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                <input
+                                    type="checkbox"
+                                    id="requestOperator"
+                                    checked={formData.requestOperator}
+                                    onChange={(e) => setFormData({ ...formData, requestOperator: e.target.checked })}
+                                    style={{ marginTop: '0.25rem' }}
+                                />
+                                <div>
+                                    <label htmlFor="requestOperator" style={{ display: 'block', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: '500' }}>
+                                        Request Operator Assistance (+$40 CAD/hr)
+                                    </label>
+                                    {formData.requestOperator && (
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginTop: '0.25rem' }}>
+                                            Note: An operator will connect with you to confirm details.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Input
+                                label="Cost Center (if applicable)"
+                                placeholder="e.g. 123-456-789"
+                                value={formData.costCenter}
+                                onChange={(e) => setFormData({ ...formData, costCenter: e.target.value })}
                             />
-                            <div>
-                                <label htmlFor="requestOperator" style={{ display: 'block', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: '500' }}>
-                                    Request Operator Assistance (+$40 CAD/hr)
-                                </label>
-                                {formData.requestOperator && (
-                                    <p style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginTop: '0.25rem' }}>
-                                        Note: An operator will connect with you to confirm details.
-                                    </p>
-                                )}
-                            </div>
                         </div>
-
-                        <Input
-                            label="Cost Center (if applicable)"
-                            placeholder="e.g. 123-456-789"
-                            value={formData.costCenter}
-                            onChange={(e) => setFormData({ ...formData, costCenter: e.target.value })}
-                        />
-                    </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                         <Button type="submit">Continue to Calendar</Button>

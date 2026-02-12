@@ -101,7 +101,7 @@ export default function ReservationFlow() {
             const dayOfWeek = date.getDay();
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
-            const isDisabled = isPast || isWeekend;
+            const isDisabled = isPast || (isWeekend && !formData.isPicsslGroup);
 
             days.push(
                 <div

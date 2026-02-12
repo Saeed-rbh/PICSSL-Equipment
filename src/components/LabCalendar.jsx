@@ -134,11 +134,7 @@ export default function LabCalendar() {
                     }}>
                         {day}
                     </div>
-                    {isWeekend ? (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                            Closed
-                        </div>
-                    ) : hasReservation && (
+                    {hasReservation ? (
                         <div style={{ fontSize: '0.75rem' }}>
                             <div style={{
                                 background: 'rgba(210, 153, 34, 0.2)',
@@ -151,7 +147,11 @@ export default function LabCalendar() {
                                 {dateReservations.length} Booked
                             </div>
                         </div>
-                    )}
+                    ) : isWeekend ? (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                            Closed
+                        </div>
+                    ) : null}
                 </div>
             );
         }

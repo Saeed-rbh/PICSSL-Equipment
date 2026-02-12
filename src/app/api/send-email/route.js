@@ -195,17 +195,16 @@ export async function POST(req) {
         // For end, just add duration
         const endDateTime = new Date(startDateTime.getTime() + durationHours * 60 * 60 * 1000);
 
-        // Generate ICS: Extract components relative to Toronto
-        // toZonedTime converts the UTC date back to a date object carrying the local time values of that zone.
-        const zonedStart = toZonedTime(startDateTime, TIMEZONE);
-        const year = zonedStart.getFullYear();
-        const month = zonedStart.getMonth() + 1;
-        const day = zonedStart.getDate();
-        const hour = zonedStart.getHours();
-        const minute = zonedStart.getMinutes();
+        // Generate ICS: Use UTC values directly
+        const year = startDateTime.getUTCFullYear();
+        const month = startDateTime.getUTCMonth() + 1;
+        const day = startDateTime.getUTCDate();
+        const hour = startDateTime.getUTCHours();
+        const minute = startDateTime.getUTCMinutes();
 
         const event = {
             start: [year, month, day, hour, minute],
+            startInputType: 'utc',
             duration: { hours: durationHours, minutes: 0 },
             title: `OPTIR Reservation: ${fullName}`,
             description: `Reservation Details:\nUser: ${fullName} (${email})\nSupervisor: ${supervisor} (${supervisorEmail})\nSample: ${sampleName}\nTotal Cost: $${totalCost}\n\nInstrument: Optical Photothermal IR Spectroscopy`,

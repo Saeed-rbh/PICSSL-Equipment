@@ -130,16 +130,16 @@ export async function POST(req) {
             </div>
         </div>`;
 
-        // Generate ICS: Extract components relative to Toronto
-        const zonedStart = toZonedTime(headerDate, TIMEZONE);
-        const year = zonedStart.getFullYear();
-        const month = zonedStart.getMonth() + 1;
-        const day = zonedStart.getDate();
-        const hour = zonedStart.getHours();
-        const minute = zonedStart.getMinutes();
+        // Generate ICS: Use UTC values directly
+        const year = headerDate.getUTCFullYear();
+        const month = headerDate.getUTCMonth() + 1;
+        const day = headerDate.getUTCDate();
+        const hour = headerDate.getUTCHours();
+        const minute = headerDate.getUTCMinutes();
 
         const event = {
             start: [year, month, day, hour, minute],
+            startInputType: 'utc',
             duration: { hours: durationHours, minutes: durationMinutes },
             title: `OPTIR ${typeLabel}: ${fullName}${trainee2Name ? ` & ${trainee2Name}` : ''}`,
             description: `Scheduled ${typeLabel}\n\nTime: ${timeRange}\nNotes: ${notes || ''}\n\nCredentials:\nUser: ${apiUsername}\nPass: ${apiPassword}${trainee2Name ? `\n\nTrainee 2: ${trainee2Name}` : ''}`,

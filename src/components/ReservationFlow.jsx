@@ -248,23 +248,45 @@ export default function ReservationFlow() {
                             onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                         />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                        <Input
-                            label="Supervisor Name"
-                            placeholder="Dr. Smith"
-                            required
-                            value={formData.supervisor}
-                            onChange={(e) => setFormData({ ...formData, supervisor: e.target.value })}
+                    <div style={{ marginTop: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                        <input
+                            type="checkbox"
+                            id="isPicsslGroup"
+                            checked={formData.isPicsslGroup}
+                            onChange={(e) => setFormData({ ...formData, isPicsslGroup: e.target.checked })}
+                            style={{ marginTop: '0.25rem' }}
                         />
-                        <Input
-                            label="Supervisor Email"
-                            type="email"
-                            placeholder="supervisor@university.edu"
-                            required
-                            value={formData.supervisorEmail}
-                            onChange={(e) => setFormData({ ...formData, supervisorEmail: e.target.value })}
-                        />
+                        <div>
+                            <label htmlFor="isPicsslGroup" style={{ display: 'block', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: '500' }}>
+                                I am a member of the PICSSL Group
+                            </label>
+                            {formData.isPicsslGroup && (
+                                <p style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginTop: '0.25rem' }}>
+                                    Booking is free for PICSSL group members. Supervisor details not required.
+                                </p>
+                            )}
+                        </div>
                     </div>
+
+                    {!formData.isPicsslGroup && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                            <Input
+                                label="Supervisor Name"
+                                placeholder="Dr. Smith"
+                                required
+                                value={formData.supervisor}
+                                onChange={(e) => setFormData({ ...formData, supervisor: e.target.value })}
+                            />
+                            <Input
+                                label="Supervisor Email"
+                                type="email"
+                                placeholder="supervisor@university.edu"
+                                required
+                                value={formData.supervisorEmail}
+                                onChange={(e) => setFormData({ ...formData, supervisorEmail: e.target.value })}
+                            />
+                        </div>
+                    )}
 
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--accent-primary)', marginTop: '1.5rem' }}>Sample Information</h3>
                     <Input
@@ -310,25 +332,6 @@ export default function ReservationFlow() {
                             </div>
                         </div>
 
-                        <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <input
-                                type="checkbox"
-                                id="isPicsslGroup"
-                                checked={formData.isPicsslGroup}
-                                onChange={(e) => setFormData({ ...formData, isPicsslGroup: e.target.checked })}
-                                style={{ marginTop: '0.25rem' }}
-                            />
-                            <div>
-                                <label htmlFor="isPicsslGroup" style={{ display: 'block', color: 'var(--text-primary)', cursor: 'pointer', fontWeight: '500' }}>
-                                    I am a member of the PICSSL Group
-                                </label>
-                                {formData.isPicsslGroup && (
-                                    <p style={{ fontSize: '0.9rem', color: 'var(--accent-primary)', marginTop: '0.25rem' }}>
-                                        Booking is free for PICSSL group members.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
 
                         <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                             <input

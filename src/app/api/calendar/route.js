@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
+import { toZonedTime } from 'date-fns-tz';
+
+const TIMEZONE = 'America/Toronto';
 
 export async function GET(request) {
     try {
@@ -45,10 +48,11 @@ export async function GET(request) {
             }
         });
 
+
         // Helper to generate slots from start/end dates
         const getSlotsFromRange = (startIso, endIso) => {
-            const start = new Date(startIso);
-            const end = new Date(endIso);
+            const start = toZonedTime(new Date(startIso), TIMEZONE);
+            const end = toZonedTime(new Date(endIso), TIMEZONE);
             const slots = [];
             let current = new Date(start);
             while (current < end) {

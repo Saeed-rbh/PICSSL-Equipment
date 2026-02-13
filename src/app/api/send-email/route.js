@@ -202,6 +202,9 @@ export async function POST(req) {
         const hour = startDateTime.getUTCHours();
         const minute = startDateTime.getUTCMinutes();
 
+        // Used for display date details in email body
+        const zonedStart = toZonedTime(startDateTime, TIMEZONE);
+
         const event = {
             start: [year, month, day, hour, minute],
             startInputType: 'utc',

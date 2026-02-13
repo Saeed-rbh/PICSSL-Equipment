@@ -207,7 +207,7 @@ export async function POST(req) {
             startInputType: 'utc',
             duration: { hours: durationHours, minutes: 0 },
             title: `OPTIR Reservation: ${fullName}`,
-            description: `Reservation Details:\nUser: ${fullName} (${email})\nSupervisor: ${supervisor} (${supervisorEmail})\nSample: ${sampleName}\nTotal Cost: $${totalCost}\n\nInstrument: Optical Photothermal IR Spectroscopy`,
+            description: `Reservation Details:\nUser: ${fullName} (${email})\n${supervisor ? `Supervisor: ${supervisor} (${supervisorEmail})\n` : ''}Sample: ${sampleName}\nTotal Cost: $${totalCost}\n\nInstrument: Optical Photothermal IR Spectroscopy`,
             location: '4700 Keele St, Petrie Science and Engineering Building, Room 020, Toronto, ON M3J 1P3',
             url: 'https://picssl-equipment.ca/',
             geo: { lat: 43.7735, lon: -79.5019 },
@@ -316,6 +316,7 @@ export async function POST(req) {
 
     } catch (error) {
         console.error('Email API Error:', error);
-        return NextResponse.json({ message: 'Failed to send email' }, { status: 500 });
+        // Return the actual error message for debugging
+        return NextResponse.json({ message: 'Failed to send email', error: error.message, stack: error.stack }, { status: 500 });
     }
 }

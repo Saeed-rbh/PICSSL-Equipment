@@ -429,11 +429,12 @@ export default function ReservationFlow() {
                                     if (response.ok) {
                                         setStep('success');
                                     } else {
-                                        alert('Reservation saved locally, but failed to send email confirmation.');
+                                        const errorData = await response.json();
+                                        alert(`Reservation saved locally, but failed to send email confirmation. Error: ${errorData.error || errorData.message || 'Unknown error'}`);
                                     }
                                 } catch (err) {
                                     console.error(err);
-                                    alert('Error processing reservation.');
+                                    alert('Error processing reservation: ' + err.message);
                                 } finally {
                                     btn.innerText = originalText;
                                     btn.disabled = false;

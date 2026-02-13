@@ -217,10 +217,13 @@ export async function POST(req) {
             busyStatus: 'BUSY',
             organizer: { name: 'OPTIR System', email: 'picssl.equipment@gmail.com' },
             attendees: [
-                { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' },
-                { name: supervisor, email: supervisorEmail, role: 'OPT-PARTICIPANT' }
+                { name: fullName, email: email, rsvp: true, partstat: 'ACCEPTED', role: 'REQ-PARTICIPANT' }
             ]
         };
+
+        if (supervisor && supervisorEmail) {
+            event.attendees.push({ name: supervisor, email: supervisorEmail, role: 'OPT-PARTICIPANT' });
+        }
 
         const { error, value } = ics.createEvent(event);
         if (error) {
@@ -271,7 +274,7 @@ export async function POST(req) {
                     </tr>
                 </table>
 
-                <p style="font-size: 14px;"><strong>Supervisor:</strong> ${supervisor}</p>
+                ${supervisor ? `<p style="font-size: 14px;"><strong>Supervisor:</strong> ${supervisor}</p>` : ''}
                 <p>A calendar invitation is attached.</p>
             </div>
             <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd;">
@@ -283,7 +286,7 @@ export async function POST(req) {
         if (transporter) {
             const mailOptions = {
                 from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
-                to: ["Arabha@yorku.ca", email, supervisorEmail],
+                to: ["Arabha@yorku.ca", email, supervisorEmail].filter(Boolean),
                 subject: reservationSubject,
                 html: html, // HTML
             };

@@ -289,7 +289,7 @@ export async function POST(req) {
         if (transporter) {
             const mailOptions = {
                 from: '"OPTIR Reservation System" <picssl.equipment@gmail.com>',
-                to: ["Arabha@yorku.ca", email, supervisorEmail].filter(Boolean),
+                to: ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail].filter(Boolean),
                 subject: reservationSubject,
                 html: html, // HTML
             };

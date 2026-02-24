@@ -84,7 +84,7 @@ export async function POST(req) {
 
         let typeLabel = '';
         let trainee2Text = '';
-        let recipients = ["Arabha@yorku.ca", email, supervisorEmail];
+        let recipients = ["Arabha@yorku.ca", "rrizvi@yorku.ca", email, supervisorEmail];
 
         if (type === 'training') {
             collectionName = 'training_requests';

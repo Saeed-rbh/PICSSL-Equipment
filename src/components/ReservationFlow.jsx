@@ -55,6 +55,32 @@ export default function ReservationFlow() {
         return instrumentTotal + operatorTotal;
     };
 
+    const formatTimeSlots = (slots) => {
+        if (!slots || !Array.isArray(slots) || slots.length === 0) return '';
+        const sortedSlots = [...slots].sort((a, b) => parseInt(a) - parseInt(b));
+        let ranges = [];
+        let startSlot = sortedSlots[0];
+        let endSlot = sortedSlots[0];
+
+        for (let i = 1; i < sortedSlots.length; i++) {
+            const prevHour = parseInt(endSlot);
+            const currHour = parseInt(sortedSlots[i]);
+
+            if (currHour === prevHour + 1) {
+                endSlot = sortedSlots[i];
+            } else {
+                const endHourStr = (parseInt(endSlot) + 1).toString().padStart(2, '0') + ':00';
+                ranges.push(`${startSlot}-${endHourStr}`);
+                startSlot = sortedSlots[i];
+                endSlot = sortedSlots[i];
+            }
+        }
+
+        const endHourStr = (parseInt(endSlot) + 1).toString().padStart(2, '0') + ':00';
+        ranges.push(`${startSlot}-${endHourStr}`);
+        return ranges.join(', ');
+    };
+
     const handleScreening = (isTrained) => {
         setFormData({ ...formData, isTrained });
         if (!isTrained) {
@@ -396,7 +422,7 @@ export default function ReservationFlow() {
                         <h3 style={{ marginBottom: '0.5rem' }}>Reservation Summary</h3>
                         <ul style={{ listStyle: 'none', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             <li><strong>Date:</strong> {selectedDate.toLocaleDateString()}</li>
-                            <li><strong>Time(s):</strong> {selectedSlots.join(', ')} ({selectedSlots.length} hours)</li>
+                            <li><strong>Time(s):</strong> {formatTimeSlots(selectedSlots)} ({selectedSlots.length} hours)</li>
                             <li><strong>Estimated Cost:</strong> <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>${totalCost} CAD</span></li>
                             <li><strong>Sample:</strong> {formData.sampleName} ({formData.sampleType})</li>
                             <li><strong>Contact:</strong> {formData.fullName}</li>

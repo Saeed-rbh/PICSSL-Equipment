@@ -3,11 +3,14 @@ from tkinter import messagebox
 import requests
 import time
 import threading
+import json
+import os
 
 import  ctypes
 
 # CONFIGURATION
 API_BASE_URL = "https://picssle-quipment--pic-equipment.us-east4.hosted.app/api/access"  # Update this to your deployed URL
+STATE_FILE = "optir_session_state.json"
 
 
 # SCREEN CONFIGURATION (Adjust for your specific monitors)
@@ -51,8 +54,103 @@ class OptirKioskApp:
         self.password = ""
         self.start_time = 0
         self.session_active = False
+        self.fullname = ""
 
-        self.setup_lock_screen()
+        # Attempt to resume an interrupted session
+        if self.load_state():
+            self.start_session(self.fullname, restoring=True)
+        else:
+            self.setup_lock_screen()
+
+        # Start offline logs sync in the background
+        threading.Thread(target=self.sync_offline_logs, daemon=True).start()
+
+    def sync_offline_logs(self):
+        """Attempts to send offline sessions to the server in the background"""
+        offline_file = "offline_sessions.jsonl"
+        if not os.path.exists(offline_file):
+            return
+            
+        try:
+            with open(offline_file, "r") as f:
+                lines = f.readlines()
+                
+            if not lines:
+                return
+                
+            remaining_lines = []
+            synced_count = 0
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    response = requests.post(f"{API_BASE_URL}/report", json={
+                        "username": data.get("username"),
+                        "password": data.get("password"),
+                        "durationMinutes": data.get("durationMinutes")
+                    }, timeout=10)
+                    
+                    if response.ok:
+                        synced_count += 1
+                    else:
+                        remaining_lines.append(line + "\n")
+                except Exception as e:
+                    # If request completely fails (no internet), keep it
+                    remaining_lines.append(line + "\n")
+                    
+            if remaining_lines:
+                with open(offline_file, "w") as f:
+                    f.writelines(remaining_lines)
+            else:
+                os.remove(offline_file)
+                
+            if synced_count > 0:
+                print(f"Successfully synced {synced_count} offline sessions to server.")
+                
+        except Exception as e:
+            print(f"Error syncing offline logs: {e}")
+
+    def save_state(self):
+        """Persists the session to disk in case of reboot/crash"""
+        try:
+            with open(STATE_FILE, 'w') as f:
+                json.dump({
+                    "username": self.username,
+                    "password": self.password,
+                    "fullname": self.fullname,
+                    "start_time": self.start_time,
+                    "session_active": self.session_active
+                }, f)
+        except Exception as e:
+            print(f"Error saving state: {e}")
+
+    def load_state(self):
+        """Loads session from disk immediately on boot"""
+        if os.path.exists(STATE_FILE):
+            try:
+                with open(STATE_FILE, 'r') as f:
+                    data = json.load(f)
+                if data.get("session_active"):
+                    self.username = data.get("username", "")
+                    self.password = data.get("password", "")
+                    self.fullname = data.get("fullname", "Restored Session")
+                    self.start_time = data.get("start_time", time.time())
+                    self.session_active = True
+                    return True
+            except Exception as e:
+                print(f"Error loading state: {e}")
+        return False
+
+    def clear_state(self):
+        """Removes the persistent state file on legitimate logout"""
+        try:
+            if os.path.exists(STATE_FILE):
+                os.remove(STATE_FILE)
+        except Exception as e:
+            print(f"Error clearing state: {e}")
 
     def enforce_kiosk_focus(self):
         """Aggressively keeps window on top when locked"""
@@ -228,7 +326,9 @@ class OptirKioskApp:
 
             self.status_label.config(text=f"Network Error: {str(e)}", fg="red")
 
-    def start_session(self, fullname):
+    def start_session(self, fullname, restoring=False):
+        self.fullname = fullname
+        
         # "Unlock": Destroy lock screen elements and show session timer
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -245,8 +345,11 @@ class OptirKioskApp:
         self.root.geometry(f"{WIN_W}x{WIN_H}+{POS_X}+{POS_Y}") 
         self.root.configure(bg="#333")
 
-        self.start_time = time.time()
-        self.session_active = True
+        if not restoring:
+            self.start_time = time.time()
+            self.session_active = True
+            
+        self.save_state() # Persist the start_time to disk immediately
 
         # Session UI
         tk.Label(self.root, text=f"User: {fullname}", fg="white", bg="#333").pack(pady=(10, 5))
@@ -279,21 +382,44 @@ class OptirKioskApp:
         duration_mins = (end_time - self.start_time) / 60
         
         # Report to API
+        report_success = False
         try:
-            requests.post(f"{API_BASE_URL}/report", json={
+            response = requests.post(f"{API_BASE_URL}/report", json={
                 "username": self.username,
                 "password": self.password,
                 "durationMinutes": duration_mins
             }, timeout=10)
+            if response.ok:
+                 report_success = True
         except Exception as e:
             # OFFLINE SAFETY: Save to local file
             try:
+                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
                 with open("offline_logs.txt", "a") as f:
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
                     f.write(f"[{timestamp}] User: {self.username} | Duration: {duration_mins:.2f} mins | Error: {str(e)}\n")
+                
+                # Save structured data for auto-retry
+                with open("offline_sessions.jsonl", "a") as f:
+                    json.dump({
+                        "username": self.username,
+                        "password": self.password,
+                        "durationMinutes": duration_mins,
+                        "timestamp": timestamp
+                    }, f)
+                    f.write("\n")
+                    
                 messagebox.showerror("Offline Report", "Network failed. Usage saved locally to 'offline_logs.txt'.")
+                report_success = True # Consider successfully saved offline
             except:
                 pass 
+                
+        if report_success:
+             self.clear_state() # Unlink the persistence file now that time is accounted for
+        
+        # Reset memory state
+        self.username = ""
+        self.password = ""
+        self.fullname = ""
         
         # Re-lock
         self.setup_lock_screen()

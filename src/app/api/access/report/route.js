@@ -60,13 +60,27 @@ export async function POST(req) {
             totalCost = 0;
             sessionCost = 0;
         } else {
-            // Total Cost
+            // Total calculated off actual time
             const totalHours = newTotalDuration / 60;
-            totalCost = totalHours * 50;
+            let computedActualCost = totalHours * 50;
+            // Cap the instrument rate at 250 like the frontend
+            if (computedActualCost > 250) computedActualCost = 250;
+            // Add operator rate if requested
+            if (reservation.requestOperator) {
+                computedActualCost += (totalHours * 40);
+            }
+
+            const reservedCost = parseFloat(reservation.totalCost || 0);
+
+            // Final total cost is the HIGHER of reserved vs actual computed
+            totalCost = Math.max(reservedCost, computedActualCost);
 
             // Session Cost (for log)
             const sessionHours = currentSessionDuration / 60;
             sessionCost = sessionHours * 50;
+            if (reservation.requestOperator) {
+                sessionCost += (sessionHours * 40);
+            }
         }
 
         // Rounding

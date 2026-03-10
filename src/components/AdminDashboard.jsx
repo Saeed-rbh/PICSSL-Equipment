@@ -13,7 +13,21 @@ export default function AdminDashboard({ reservations: initialReservations, trai
     const [selectedItem, setSelectedItem] = useState(null); // For Details Modal
 
     const [schedulingItem, setSchedulingItem] = useState(null); // For Schedule Modal
+    const [memberFilter, setMemberFilter] = useState('all'); // 'all', 'lab_member', 'non_lab_member'
+    const [monthFilter, setMonthFilter] = useState('all'); // 'all' or 'YYYY-MM'
     const [creationModalOpen, setCreationModalOpen] = useState(false);
+
+    // Compute available months for the filter dropdown based on reservations
+    const availableMonths = Array.from(new Set(reservations.map(r => {
+        if (!r.selectedDate) return null;
+        const d = new Date(r.selectedDate);
+        if (isNaN(d.getTime())) return null;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }).filter(Boolean))).sort().reverse().map(value => {
+        const [year, month] = value.split('-');
+        const date = new Date(year, parseInt(month) - 1, 1);
+        return { value, label: date.toLocaleString('default', { month: 'long', year: 'numeric' }) };
+    });
 
     const tabs = [
         { id: 'reservations', label: 'Instrument Reservations' },
@@ -26,7 +40,33 @@ export default function AdminDashboard({ reservations: initialReservations, trai
         if (!timestamp) return 'N/A';
         // Handle Firestore Timestamp or Date string
         const date = new Date(timestamp._seconds ? timestamp._seconds * 1000 : timestamp);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        return date.toLocaleDateString();
+    };
+
+    const formatTimeSlots = (slots) => {
+        if (!slots || !Array.isArray(slots) || slots.length === 0) return '';
+        const sortedSlots = [...slots].sort((a, b) => parseInt(a) - parseInt(b));
+        let ranges = [];
+        let startSlot = sortedSlots[0];
+        let endSlot = sortedSlots[0];
+
+        for (let i = 1; i < sortedSlots.length; i++) {
+            const prevHour = parseInt(endSlot);
+            const currHour = parseInt(sortedSlots[i]);
+
+            if (currHour === prevHour + 1) {
+                endSlot = sortedSlots[i];
+            } else {
+                const endHourStr = (parseInt(endSlot) + 1).toString().padStart(2, '0') + ':00';
+                ranges.push(`${startSlot}-${endHourStr}`);
+                startSlot = sortedSlots[i];
+                endSlot = sortedSlots[i];
+            }
+        }
+
+        const endHourStr = (parseInt(endSlot) + 1).toString().padStart(2, '0') + ':00';
+        ranges.push(`${startSlot}-${endHourStr}`);
+        return ranges.join(', ');
     };
 
     const handleDelete = async (collection, id) => {
@@ -70,8 +110,110 @@ export default function AdminDashboard({ reservations: initialReservations, trai
         }
     };
 
+    const filteredReservations = reservations.filter(r => {
+        let memberMatch = true;
+        if (memberFilter === 'lab_member') memberMatch = r.isPicsslGroup === true || r.picsslGroup === true;
+        if (memberFilter === 'non_lab_member') memberMatch = !r.isPicsslGroup && !r.picsslGroup;
+
+        let monthMatch = true;
+        if (monthFilter !== 'all' && r.selectedDate) {
+            const d = new Date(r.selectedDate);
+            if (!isNaN(d.getTime())) {
+                const rMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                monthMatch = rMonth === monthFilter;
+            }
+        }
+
+        return memberMatch && monthMatch;
+    });
+
+    const handleDownloadCSV = () => {
+        let dataToExport = [];
+        let filename = '';
+
+        if (activeTab === 'reservations') {
+            dataToExport = filteredReservations.map(r => ({
+                'Date Submitted': formatDate(r.createdAt).split(' ')[0],
+                'Name': r.fullName,
+                'Email': r.email,
+                'Supervisor': r.supervisor || '-',
+                'Reserved Date': new Date(r.selectedDate).toLocaleDateString(),
+                'Time Slots': formatTimeSlots(r.selectedSlots),
+                'Est. Cost': r.totalCost,
+                'Actual Time': r.actualDuration ? Math.round(r.actualDuration) + ' mins' : '-',
+                'Final Price': r.finalCost !== undefined ? r.finalCost : '-',
+                'Cost Center': r.costCenter || '-'
+            }));
+            filename = 'reservations.csv';
+        } else if (activeTab === 'analysis') {
+            dataToExport = analysisRequests.map(r => ({
+                'Date Submitted': formatDate(r.createdAt).split(' ')[0],
+                'Name': r.fullName,
+                'Email': r.email,
+                'Est. Cost': r.estimatedCost,
+                'Samples': r.sampleCount,
+                'Type': r.analysisType,
+                'Supervisor': r.supervisorEmail
+            }));
+            filename = 'analysis_requests.csv';
+        } else if (activeTab === 'training') {
+            dataToExport = trainingRequests.map(r => ({
+                'Date Submitted': formatDate(r.createdAt).split(' ')[0],
+                'Name': r.fullName,
+                'Email': r.email,
+                'Est. Cost': 250,
+                'Department': r.department,
+                'Supervisor': r.supervisor
+            }));
+            filename = 'training_requests.csv';
+        } else if (activeTab === 'logs') {
+            dataToExport = accessLogs.map(l => {
+                const logoutTime = new Date(l.timestamp);
+                const loginTime = new Date(logoutTime.getTime() - (l.durationMinutes * 60000));
+                return {
+                    'Name': l.fullName,
+                    'User Type': l.userType === 'admin' ? 'ADMIN' : 'USER',
+                    'Login Time': loginTime.toLocaleString(),
+                    'Logout Time': logoutTime.toLocaleString(),
+                    'Duration': Math.round(l.durationMinutes) + ' mins'
+                };
+            });
+            filename = 'access_logs.csv';
+        }
+
+        if (!dataToExport || dataToExport.length === 0) {
+            alert('No data to export.');
+            return;
+        }
+
+        const headers = Object.keys(dataToExport[0]);
+        const csvRows = [];
+        csvRows.push(headers.map(h => `"${h}"`).join(','));
+
+        for (const row of dataToExport) {
+            const values = headers.map(header => {
+                const val = row[header] !== undefined && row[header] !== null ? row[header] : '';
+                const escaped = String(val).replace(/"/g, '""');
+                return `"${escaped}"`;
+            });
+            csvRows.push(values.join(','));
+        }
+
+        const csvData = csvRows.join('\n');
+        const blob = new Blob([csvData], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
     // Calculate Totals
-    const totalReservationsCost = reservations.reduce((acc, curr) => acc + (parseFloat(curr.totalCost) || 0), 0);
+    const totalReservationsCost = filteredReservations.reduce((acc, curr) => acc + (parseFloat(curr.totalCost) || 0), 0);
     const totalAnalysisCost = analysisRequests.reduce((acc, curr) => acc + (parseFloat(curr.estimatedCost) || 0), 0);
     const totalTrainingCost = trainingRequests.length * 250; // Fixed $250 fee
     const grandTotal = totalReservationsCost + totalAnalysisCost + totalTrainingCost;
@@ -93,7 +235,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                     <div className="card" style={{ padding: '1.5rem', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                         <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Reservations Value</h3>
                         <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>${totalReservationsCost.toLocaleString()}</p>
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{reservations.length} bookings</span>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{filteredReservations.length} bookings</span>
                     </div>
                     <div className="card" style={{ padding: '1.5rem', textAlign: 'center', border: '1px solid var(--border-color)' }}>
                         <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Analysis Value</h3>
@@ -132,62 +274,140 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                 {/* Content */}
                 <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)', overflowX: 'auto' }}>
 
-                    {activeTab === 'analysis' && (
-                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                                onClick={() => setCreationModalOpen('analysis')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    background: 'var(--accent-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                + Create Analysis Request
-                            </button>
-                        </div>
-                    )}
+                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <button
+                            onClick={handleDownloadCSV}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                background: 'transparent',
+                                color: 'var(--text-primary)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: 'var(--radius-md)',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Export to CSV
+                        </button>
 
-                    {activeTab === 'training' && (
-                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                                onClick={() => setCreationModalOpen('training')}
-                                style={{
-                                    padding: '0.5rem 1rem',
-                                    background: 'var(--accent-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                + Create Training Request
-                            </button>
-                        </div>
-                    )}
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {activeTab === 'reservations' && (
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <select
+                                        value={monthFilter}
+                                        onChange={(e) => setMonthFilter(e.target.value)}
+                                        style={{
+                                            appearance: 'none',
+                                            WebkitAppearance: 'none',
+                                            padding: '0.45rem 2rem 0.45rem 1rem',
+                                            background: 'var(--bg-secondary)',
+                                            color: 'var(--text-primary)',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: 'var(--radius-md)',
+                                            outline: 'none',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        <option value="all">🗓️ All Months</option>
+                                        {availableMonths.map(m => (
+                                            <option key={m.value} value={m.value}>{m.label}</option>
+                                        ))}
+                                    </select>
+                                    <svg
+                                        style={{ position: 'absolute', right: '0.5rem', pointerEvents: 'none', color: 'var(--text-secondary)' }}
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                    >
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                            )}
 
-                    {activeTab === 'logs' && (
-                        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                                onClick={handleClearLogs}
-                                style={{
-                                    background: '#da3633',
-                                    color: 'white',
-                                    border: 'none',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontWeight: 'bold'
-                                }}
-                            >
-                                Clear All Logs
-                            </button>
+                            {activeTab === 'reservations' && (
+                                <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                                    {[
+                                        { value: 'all', label: 'All' },
+                                        { value: 'lab_member', label: 'PICSSL Members' },
+                                        { value: 'non_lab_member', label: 'Non-Members' }
+                                    ].map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => setMemberFilter(opt.value)}
+                                            style={{
+                                                padding: '0.4rem 0.8rem',
+                                                background: memberFilter === opt.value ? 'var(--accent-primary)' : 'transparent',
+                                                color: memberFilter === opt.value ? 'white' : 'var(--text-primary)',
+                                                border: 'none',
+                                                borderRight: opt.value !== 'non_lab_member' ? '1px solid var(--border-color)' : 'none',
+                                                cursor: 'pointer',
+                                                fontWeight: memberFilter === opt.value ? 'bold' : 'normal',
+                                                transition: 'background 0.2s',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {activeTab === 'analysis' && (
+                                <button
+                                    onClick={() => setCreationModalOpen('analysis')}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        background: 'var(--accent-primary)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    + Create Analysis Request
+                                </button>
+                            )}
+
+                            {activeTab === 'training' && (
+                                <button
+                                    onClick={() => setCreationModalOpen('training')}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        background: 'var(--accent-primary)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: 'var(--radius-md)',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    + Create Training Request
+                                </button>
+                            )}
+
+                            {activeTab === 'logs' && (
+                                <button
+                                    onClick={handleClearLogs}
+                                    style={{
+                                        background: '#da3633',
+                                        color: 'white',
+                                        border: 'none',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    Clear All Logs
+                                </button>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     {/* Desktop Table View */}
                     <div className="desktop-only">
@@ -218,12 +438,12 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 </tr>
                             </thead>
                             <tbody>
-                                {activeTab === 'reservations' && reservations.map((item, i) => (
+                                {activeTab === 'reservations' && filteredReservations.map((item, i) => (
                                     <tr key={i}>
                                         <td>{formatDate(item.createdAt)}</td>
                                         <td style={{ fontWeight: 'bold' }}>{item.fullName}</td>
                                         <td>{new Date(item.selectedDate).toLocaleDateString()}</td>
-                                        <td>{item.selectedSlots?.join(', ')}</td>
+                                        <td>{formatTimeSlots(item.selectedSlots)}</td>
                                         <td style={{ color: 'var(--accent-primary)' }}>${item.totalCost}</td>
                                         <td>
                                             {item.actualDuration ? (
@@ -316,7 +536,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
 
                     {/* Mobile Card View */}
                     <div className="mobile-only" style={{ padding: '1rem' }}>
-                        {activeTab === 'reservations' && reservations.map((item, i) => (
+                        {activeTab === 'reservations' && filteredReservations.map((item, i) => (
                             <div key={i} className="dashboard-card">
                                 <div className="dashboard-card-row">
                                     <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>{item.fullName}</span>
@@ -328,7 +548,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                                 </div>
                                 <div className="dashboard-card-row">
                                     <span className="dashboard-card-label">Slots:</span>
-                                    <span>{item.selectedSlots?.join(', ')}</span>
+                                    <span>{formatTimeSlots(item.selectedSlots)}</span>
                                 </div>
                                 {item.actualDuration && (
                                     <div className="dashboard-card-row">
@@ -408,7 +628,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                             );
                         })}
 
-                        {((activeTab === 'reservations' && reservations.length === 0) ||
+                        {((activeTab === 'reservations' && filteredReservations.length === 0) ||
                             (activeTab === 'analysis' && analysisRequests.length === 0) ||
                             (activeTab === 'training' && trainingRequests.length === 0)) && (
                                 <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -419,7 +639,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
                 </div>
 
 
-                {selectedItem && <DetailsModal item={selectedItem} logs={accessLogs} onClose={() => setSelectedItem(null)} formatDate={formatDate} />}
+                {selectedItem && <DetailsModal item={selectedItem} logs={accessLogs} onClose={() => setSelectedItem(null)} formatDate={formatDate} formatTimeSlots={formatTimeSlots} />}
                 {schedulingItem && <ScheduleModal item={schedulingItem} onClose={() => setSchedulingItem(null)} />}
                 {creationModalOpen && <CreateRequestModal initialType={creationModalOpen} onClose={() => setCreationModalOpen(false)} />}
             </main >
@@ -428,7 +648,7 @@ export default function AdminDashboard({ reservations: initialReservations, trai
 }
 
 // Simple Modal using inline styles for speed
-function DetailsModal({ item, logs, onClose, formatDate }) {
+function DetailsModal({ item, logs, onClose, formatDate, formatTimeSlots }) {
     if (!item) return null;
 
     return (
@@ -443,7 +663,7 @@ function DetailsModal({ item, logs, onClose, formatDate }) {
                     {Object.entries(item).map(([key, value]) => {
                         // Skip internal/complex fields if needed, or format them
                         if (key === 'createdAt' || key === 'selectedDate' || key === 'scheduledDate') value = formatDate(value);
-                        if (key === 'selectedSlots' && Array.isArray(value)) value = value.join(', ');
+                        if (key === 'selectedSlots' && Array.isArray(value)) value = formatTimeSlots(value);
                         if (typeof value === 'object' && value !== null) return null; // Skip complex objects for now
 
                         return (

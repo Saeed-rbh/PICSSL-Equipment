@@ -1,9 +1,11 @@
 env:
-  - variable: smtp_host
+  - variable: SMTP_HOST
     value: smtp.gmail.com
-  - variable: smtp_port
+  - variable: SMTP_PORT
     value: "587"
-  - variable: smtp_user
-    value: picssl.equipment@gmail.com
-  - variable: smtp_pass
-    value: "rrfn fwrm kurh jals"
+  - variable: SMTP_USER
+    secret: smtp-user
+  - variable: SMTP_PASS
+    secret: smtp-pass
+  - variable: ADMIN_PASSWORD
+    secret: admin-password

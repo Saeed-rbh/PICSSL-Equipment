@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
     const body = await request.json();
-    const { username, password } = body;
+    const { username, password } = body ?? {};
+    const configuredPassword = process.env.ADMIN_PASSWORD;
 
-    // Hardcoded credentials (could use env vars)
-    if (username === 'admin' && password === 'picssl2026') {
+    if (!configuredPassword) {
+        return NextResponse.json(
+            { success: false, message: 'Admin login is not configured' },
+            { status: 503 }
+        );
+    }
+
+    if (username === 'admin' && password === configuredPassword) {
         const response = NextResponse.json({ success: true });
 
         // Set HTTP-only cookie

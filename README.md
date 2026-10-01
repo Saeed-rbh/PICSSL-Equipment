@@ -11,24 +11,20 @@ A complete solution for managing lab equipment access, tracking usage, and billi
 -   **Usage Tracking**: Pay only for the time you actually use (tracked to the minute).
 
 ### For Administrators
--   **Admin Dashboard**: Central hub to view all Reservations, Training Requests, and Analysis Requests.
+-   **Admin Dashboard**: Central hub to view reservations and service requests.
 -   **Access Logs**: Detailed history of every login/logout event, including offline usage.
 -   **Cost Management**:
-    -   Automatic cost calculation ($50/hr standard, $0 for PICSSL/Admin).
-    -   Cumulative tracking: Multiple sessions for one reservation are summed up.
--   **Emergency Control**:
-    -   **Clear Logs**: Ability to flush old access logs.
-    -   **Override**: Admin credentials (`admin`) bypass time checks and lock barriers.
+    -   Automatic cost calculation and cumulative session tracking.
 
 ### Kiosk Client (PC Lock Screen)
--   **Security**: Locks the equipment PC until valid credentials are entered.
+-   **Security**: Locks the equipment PC until valid reservation credentials are entered.
 -   **Time Enforcement**:
     -   Prevents login before the booked start time.
     -   Rejects login after the session expiry.
 -   **Dual Monitor**: Displays status on primary screen and instructions on secondary monitor.
--   **Offline Mode**:
-    -   **Emergency Entry**: Admin can unlock PC without internet.
-    -   **Data Safety**: Saves usage logs locally if network fails during logout.
+-   **Network Resilience**:
+    -   New sessions require an online reservation check.
+    -   If connectivity fails during an active session, its usage report is stored locally and uploaded when connectivity returns.
 -   **Tamper Protection**: Hides console, blocks Alt+Tab, and prevents closing.
 
 ---
@@ -57,18 +53,15 @@ A complete solution for managing lab equipment access, tracking usage, and billi
 ## 🛠️ Admin Guide
 
 ### Dashboard Access
--   Log in to `/admin` to view the dashboard.
--   **Tabs**: Switch between Reservations, Training, Analysis, and Access Logs.
+- Log in to `/admin` using the deployment-configured administrator password.
+- Choose and set a new `ADMIN_PASSWORD` yourself as the Firebase App Hosting `admin-password` secret before deployment. Revoke the current SMTP app password with its provider, then configure the replacement SMTP account credentials as the `smtp-user` and `smtp-pass` secrets referenced in `apphosting.yaml`. Follow the [Firebase App Hosting secret configuration guide](https://firebase.google.com/docs/app-hosting/configure#store-and-access-secret-parameters). Secret values must stay out of source files and version control.
 
 ### Managing Logs
--   **View History**: Click "View" on any reservation to see a specific breakdown of its session history.
--   **Clear Logs**: In the "Access Logs" tab, use the "Clear All Logs" button to wipe the history.
+- **View History**: Click "View" on any reservation to see a specific breakdown of its session history.
+- **Clear Logs**: In the "Access Logs" tab, use the "Clear All Logs" button to wipe the history.
 
-### Emergency Override (Kiosk)
-If the internet is down or a user is stuck:
--   **Username**: `admin`
--   **Password**: `picssl2026`
--   *This grants immediate access and bypasses reporting/billing, ensuring instruments are never held hostage by network issues.*
+### Network Outages
+New kiosk sessions require successful server verification. There is no shared offline override. If connectivity fails, follow the lab's established equipment-access procedure and preserve the usage record.
 
 ---
 
@@ -86,7 +79,7 @@ If the internet is down or a user is stuck:
 3.  **Run**: Double-click the script to lock the screen.
 
 ### Troubleshooting
--   **"Network Failed"**: The client has switched to Offline Mode. Use Admin credentials to unlock.
+-   **"Network Failed"**: New sessions require server verification. Contact lab staff and follow the lab's established access procedure; the kiosk has no shared offline override.
 -   **"Usage saved locally"**: Internet failed during logout. Check `offline_logs.txt` in the script directory for the usage report.
 -   **Closing the Kiosk**: The app is designed to be unclosable. To close it for maintenance, open Task Manager (`Ctrl+Shift+Esc`) and end the `Python` process.
 

@@ -214,14 +214,6 @@ class OptirKioskApp:
                 self.status_label.config(text=data.get("message", "Login Failed"), fg="red")
         
         except Exception as e:
-            # OFFLINE SAFETY: Check for Admin Override
-            if user == "admin" and pwd == "picssl2026":
-                self.username = "admin"
-                self.password = "picssl2026"
-                self.start_session("Offline Admin")
-                messagebox.showwarning("Offline Mode", "Network unavailable. Logged in as Admin (Offline).")
-                return
-
             self.status_label.config(text=f"Network Error: {str(e)}", fg="red")
 
     def start_session(self, fullname):

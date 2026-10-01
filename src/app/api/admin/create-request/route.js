@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import * as ics from 'ics';
 import { db } from '@/lib/firebaseAdmin';
+import { isAdminAuthenticated } from '@/lib/adminAuth.mjs';
 import { toZonedTime, format, fromZonedTime } from 'date-fns-tz';
 
 const TIMEZONE = 'America/Toronto';
 
 export async function POST(req) {
+    if (!(await isAdminAuthenticated())) {
+        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const body = await req.json();
         const { type } = body;

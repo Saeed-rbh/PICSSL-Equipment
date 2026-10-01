@@ -24,7 +24,7 @@ A complete solution for managing lab equipment access, tracking usage, and billi
 -   **Dual Monitor**: Displays status on primary screen and instructions on secondary monitor.
 -   **Network Resilience**:
     -   New sessions require an online reservation check.
-    -   If connectivity fails during an active session, its usage report is stored locally and uploaded when connectivity returns.
+    -   If connectivity fails during logout, the report is queued locally and retried when the kiosk client next starts online. Rejected reports are saved for staff review.
 -   **Tamper Protection**: Hides console, blocks Alt+Tab, and prevents closing.
 
 ---
@@ -54,7 +54,9 @@ A complete solution for managing lab equipment access, tracking usage, and billi
 
 ### Dashboard Access
 - Log in to `/admin` using the deployment-configured administrator password.
-- Choose and set a new `ADMIN_PASSWORD` yourself as the Firebase App Hosting `admin-password` secret before deployment. Revoke the current SMTP app password with its provider, then configure the replacement SMTP account credentials as the `smtp-user` and `smtp-pass` secrets referenced in `apphosting.yaml`. Follow the [Firebase App Hosting secret configuration guide](https://firebase.google.com/docs/app-hosting/configure#store-and-access-secret-parameters). Secret values must stay out of source files and version control.
+- Set a new `ADMIN_PASSWORD` yourself as the Firebase App Hosting `admin-password` secret; it must be at least 16 characters. Revoke the previously exposed SMTP app password with its provider, then configure replacement account credentials as the `smtp-user` and `smtp-pass` secrets referenced in `apphosting.yaml`. Follow the [Firebase App Hosting secret configuration guide](https://firebase.google.com/docs/app-hosting/configure#store-and-access-secret-parameters). Secret values must stay out of source files and version control.
+- Review the backend's console environment overrides before rollout and remove any stale credential values there. Confirm the backend's live branch and automatic rollout setting in Firebase Console; do not assume a source change has reached production.
+- At a planned maintenance window, replace the kiosk client on each equipment PC with the updated version. It requires online reservation verification and retires legacy shared-administrator session records for staff review. Keep the lab's equipment-access procedure available while clients and server are updated.
 
 ### Managing Logs
 - **View History**: Click "View" on any reservation to see a specific breakdown of its session history.
@@ -80,7 +82,7 @@ New kiosk sessions require successful server verification. There is no shared of
 
 ### Troubleshooting
 -   **"Network Failed"**: New sessions require server verification. Contact lab staff and follow the lab's established access procedure; the kiosk has no shared offline override.
--   **"Usage saved locally"**: Internet failed during logout. Check `offline_logs.txt` in the script directory for the usage report.
+-   **"Usage saved locally"**: Internet failed during logout. The report is retried at the next client startup with connectivity; check `offline_logs.txt` in the script directory. A rejected report is stored in `unverified_sessions.jsonl` for staff review.
 -   **Closing the Kiosk**: The app is designed to be unclosable. To close it for maintenance, open Task Manager (`Ctrl+Shift+Esc`) and end the `Python` process.
 
 ---

@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
+import { isAdminAuthenticated } from '@/lib/adminAuth.mjs';
 import { toZonedTime, format } from 'date-fns-tz';
 
 const TIMEZONE = 'America/Toronto';
 
 export async function GET(req) {
+    if (!(await isAdminAuthenticated())) {
+        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const trainingSnap = await db.collection('training_requests').get();
         const analysisSnap = await db.collection('analysis_requests').get();
@@ -46,9 +50,15 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+    if (!(await isAdminAuthenticated())) {
+        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const body = await req.json();
         const { collection, id, newStart, newEnd } = body;
+        if (!['training_requests', 'analysis_requests'].includes(collection) || typeof id !== 'string' || !id.trim()) {
+            return NextResponse.json({ success: false, message: 'Invalid collection or id' }, { status: 400 });
+        }
 
         // newStart/newEnd expected in absolute UTC ISO
         await db.collection(collection).doc(id).update({

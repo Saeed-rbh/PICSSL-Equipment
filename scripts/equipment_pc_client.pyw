@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import messagebox
 import requests
 import time
+import json
+import os
 import threading
 
 import  ctypes
@@ -50,6 +52,109 @@ class OptirKioskApp:
         self.session_active = False
 
         self.setup_lock_screen()
+        threading.Thread(target=self.sync_offline_logs, daemon=True).start()
+
+    def record_unverified_session(self, data, reason):
+        try:
+            start_time = data.get("start_time")
+            duration = data.get("durationMinutes")
+            if duration is None and start_time is not None:
+                duration = max(0, (time.time() - float(start_time)) / 60)
+            record = {
+                "username": str(data.get("username") or "unknown"),
+                "fullName": str(data.get("fullname") or data.get("fullName") or ""),
+                "startedAt": start_time,
+                "reportedDurationMinutes": float(duration) if duration is not None else None,
+                "recordedAt": time.time(),
+                "requiresStaffReview": True,
+                "reason": reason
+            }
+            with open("unverified_sessions.jsonl", "a", encoding="utf-8") as f:
+                json.dump(record, f)
+                f.write("\n")
+            return True
+        except Exception:
+            return False
+
+    def queue_offline_report(self, data):
+        try:
+            timestamp = data.get("timestamp") or time.strftime("%Y-%m-%d %H:%M:%S")
+            queued = {
+                "username": data.get("username"),
+                "password": data.get("password"),
+                "fullname": data.get("fullname", ""),
+                "durationMinutes": float(data.get("durationMinutes", 0)),
+                "timestamp": timestamp
+            }
+            with open("offline_sessions.jsonl", "a", encoding="utf-8") as f:
+                json.dump(queued, f)
+                f.write("\n")
+            with open("offline_logs.txt", "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] User: {queued['username']} | Duration: {queued['durationMinutes']:.2f} mins | Pending server retry\n")
+            return True
+        except Exception:
+            return False
+
+    def sync_offline_logs(self):
+        """Retries queued reservation reports once when the client starts online."""
+        offline_file = "offline_sessions.jsonl"
+        if not os.path.exists(offline_file):
+            return
+
+        try:
+            with open(offline_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            remaining_lines = []
+            for line in lines:
+                try:
+                    data = json.loads(line)
+                except (json.JSONDecodeError, TypeError):
+                    remaining_lines.append(line)
+                    continue
+
+                if str(data.get("username", "")).lower() == "admin":
+                    if not self.record_unverified_session(data, "Legacy administrator session requires staff review"):
+                        remaining_lines.append(line)
+                    continue
+
+                try:
+                    response = requests.post(f"{API_BASE_URL}/report", json={
+                        "username": data.get("username"),
+                        "password": data.get("password"),
+                        "durationMinutes": data.get("durationMinutes")
+                    }, timeout=10)
+                except requests.RequestException:
+                    remaining_lines.append(line)
+                    continue
+
+                try:
+                    response_data = response.json()
+                except (ValueError, AttributeError):
+                    response_data = None
+
+                if response.ok and isinstance(response_data, dict) and response_data.get("success"):
+                    continue
+
+                terminal_rejection = (
+                    400 <= response.status_code < 500
+                    or (response.ok and isinstance(response_data, dict) and response_data.get("success") is False)
+                )
+                if terminal_rejection and self.record_unverified_session(
+                    data, "Queued report was rejected and needs staff review"
+                ):
+                    continue
+
+                remaining_lines.append(line)
+
+            if remaining_lines:
+                with open(offline_file, "w", encoding="utf-8") as f:
+                    f.writelines(remaining_lines)
+            else:
+                os.remove(offline_file)
+        except Exception:
+            # Keep the queue for a later launch if local or network I/O fails.
+            return
 
     def enforce_kiosk_focus(self):
         """Aggressively keeps window on top when locked"""
@@ -217,6 +322,7 @@ class OptirKioskApp:
             self.status_label.config(text=f"Network Error: {str(e)}", fg="red")
 
     def start_session(self, fullname):
+        self.fullname = fullname
         # "Unlock": Destroy lock screen elements and show session timer
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -262,28 +368,59 @@ class OptirKioskApp:
 
 
     def logout(self):
-        self.session_active = False
         end_time = time.time()
-        duration_mins = (end_time - self.start_time) / 60
-        
-        # Report to API
+        duration_mins = max(0, (end_time - self.start_time) / 60)
+        report = {
+            "username": self.username,
+            "password": self.password,
+            "fullname": self.fullname,
+            "start_time": self.start_time,
+            "durationMinutes": duration_mins,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        needs_review = False
+        queued_locally = False
         try:
-            requests.post(f"{API_BASE_URL}/report", json={
-                "username": self.username,
-                "password": self.password,
+            response = requests.post(f"{API_BASE_URL}/report", json={
+                "username": report["username"],
+                "password": report["password"],
                 "durationMinutes": duration_mins
             }, timeout=10)
-        except Exception as e:
-            # OFFLINE SAFETY: Save to local file
             try:
-                with open("offline_logs.txt", "a") as f:
-                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                    f.write(f"[{timestamp}] User: {self.username} | Duration: {duration_mins:.2f} mins | Error: {str(e)}\n")
-                messagebox.showerror("Offline Report", "Network failed. Usage saved locally to 'offline_logs.txt'.")
-            except:
-                pass 
-        
-        # Re-lock
+                result = response.json()
+            except ValueError:
+                result = {}
+
+            if response.ok and isinstance(result, dict) and result.get("success"):
+                handled = True
+            elif 400 <= response.status_code < 500 or (response.ok and isinstance(result, dict) and result.get("success") is False):
+                handled = self.record_unverified_session(report, "Usage report was rejected and requires staff review")
+                needs_review = handled
+            else:
+                handled = self.queue_offline_report(report)
+                queued_locally = handled
+        except requests.RequestException:
+            handled = self.queue_offline_report(report)
+            queued_locally = handled
+
+        if not handled:
+            self.session_active = True
+            messagebox.showerror("Usage Not Saved", "The usage report could not be saved locally or by the server. Keep this session open and contact lab staff.")
+            return
+
+        if needs_review:
+            messagebox.showwarning("Usage Needs Review", "The server rejected this usage report. A local record was saved for staff reconciliation.")
+        elif queued_locally:
+            messagebox.showwarning("Usage Saved Locally", "The report is queued for server retry when the client next starts online.")
+
+        # Retire the local session after its report is accepted, queued, or saved
+        # for staff review; rejected reports must not leave a replayable session.
+        self.session_active = False
+        self.username = ""
+        self.password = ""
+        self.fullname = ""
+        self.start_time = 0
         self.setup_lock_screen()
 
 if __name__ == "__main__":

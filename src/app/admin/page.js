@@ -1,7 +1,7 @@
+import { isAdminAuthenticated } from '@/lib/adminAuth.mjs';
 import { db } from '@/lib/firebaseAdmin';
 import AdminDashboard from '@/components/AdminDashboard';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic'; // Disable caching to see real-time data
 
@@ -42,11 +42,7 @@ async function getData() {
 }
 
 export default async function AdminPage() {
-    // Session Check
-    const cookieStore = await cookies();
-    const session = cookieStore.get('admin_session');
-
-    if (!session || session.value !== 'true') {
+    if (!(await isAdminAuthenticated())) {
         redirect('/admin/login');
     }
 

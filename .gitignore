@@ -24,6 +24,15 @@ node_modules
 .DS_Store
 *.pem
 
+# Kiosk client runtime state and usage queues
+optir_session_state.json
+offline_sessions.jsonl
+offline_sessions.jsonl.batch-*
+offline_sessions.lock
+offline_sessions.sync.lock
+offline_logs.txt
+unverified_sessions.jsonl
+
 # debug
 npm-debug.log*
 yarn-debug.log*

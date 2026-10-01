@@ -5,12 +5,64 @@ import time
 import threading
 import json
 import os
+import glob
+from contextlib import contextmanager
 
 import  ctypes
 
 # CONFIGURATION
 API_BASE_URL = "https://picssle-quipment--pic-equipment.us-east4.hosted.app/api/access"  # Update this to your deployed URL
 STATE_FILE = "optir_session_state.json"
+
+_OFFLINE_QUEUE_THREAD_LOCK = threading.Lock()
+_OFFLINE_SYNC_THREAD_LOCK = threading.Lock()
+
+
+@contextmanager
+def _offline_file_lock(lock_path, thread_lock):
+    """Serialize kiosk queue file operations across threads and processes."""
+    with thread_lock:
+        lock_file = open(lock_path, "a+b")
+        locked = False
+        try:
+            lock_file.seek(0, os.SEEK_END)
+            if lock_file.tell() == 0:
+                lock_file.write(b"\0")
+                lock_file.flush()
+            lock_file.seek(0)
+
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            locked = True
+            yield
+        finally:
+            if locked:
+                lock_file.seek(0)
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            lock_file.close()
+
+
+@contextmanager
+def offline_queue_lock():
+    with _offline_file_lock("offline_sessions.lock", _OFFLINE_QUEUE_THREAD_LOCK):
+        yield
+
+
+@contextmanager
+def offline_sync_lock():
+    # Syncs serialize with each other, but queue writers use a different lock
+    # and remain free to append while this sync performs network requests.
+    with _offline_file_lock("offline_sessions.sync.lock", _OFFLINE_SYNC_THREAD_LOCK):
+        yield
 
 
 # SCREEN CONFIGURATION (Adjust for your specific monitors)
@@ -65,21 +117,18 @@ class OptirKioskApp:
         # Start offline logs sync in the background
         threading.Thread(target=self.sync_offline_logs, daemon=True).start()
 
-    def sync_offline_logs(self):
-        """Retries queued reservation reports once when the client starts online."""
-        offline_file = "offline_sessions.jsonl"
-        if not os.path.exists(offline_file):
+    def _retry_offline_batch(self, batch_file, offline_file):
+        try:
+            with open(batch_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except OSError:
             return
 
-        try:
-            with open(offline_file, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-
-            remaining_lines = []
-            for line in lines:
-                try:
-                    data = json.loads(line)
-                except (json.JSONDecodeError, TypeError):
+        remaining_lines = []
+        for line in lines:
+            try:
+                data = json.loads(line)
+                if not isinstance(data, dict):
                     remaining_lines.append(line)
                     continue
 
@@ -88,16 +137,11 @@ class OptirKioskApp:
                         remaining_lines.append(line)
                     continue
 
-                try:
-                    response = requests.post(f"{API_BASE_URL}/report", json={
-                        "username": data.get("username"),
-                        "password": data.get("password"),
-                        "durationMinutes": data.get("durationMinutes")
-                    }, timeout=10)
-                except requests.RequestException:
-                    remaining_lines.append(line)
-                    continue
-
+                response = requests.post(f"{API_BASE_URL}/report", json={
+                    "username": data.get("username"),
+                    "password": data.get("password"),
+                    "durationMinutes": data.get("durationMinutes")
+                }, timeout=10)
                 try:
                     response_data = response.json()
                 except (ValueError, AttributeError):
@@ -114,16 +158,42 @@ class OptirKioskApp:
                     data, "Queued report was rejected and needs staff review"
                 ):
                     continue
-
+            except Exception:
+                # Preserve malformed records and reports whose request failed.
                 remaining_lines.append(line)
+                continue
 
-            if remaining_lines:
-                with open(offline_file, "w", encoding="utf-8") as f:
-                    f.writelines(remaining_lines)
-            else:
-                os.remove(offline_file)
+            remaining_lines.append(line)
+
+        try:
+            with offline_queue_lock():
+                if remaining_lines:
+                    with open(offline_file, "a", encoding="utf-8") as f:
+                        f.writelines(remaining_lines)
+                os.remove(batch_file)
+        except OSError:
+            # Keep the claimed batch if the pending rows could not be restored.
+            return
+
+    def sync_offline_logs(self):
+        """Retries claimed reports without holding the queue lock during network I/O."""
+        offline_file = "offline_sessions.jsonl"
+        try:
+            with offline_sync_lock():
+                with offline_queue_lock():
+                    # Recover a batch left behind by an interrupted earlier sync.
+                    batches = sorted(glob.glob(offline_file + ".batch-*"))
+                    if os.path.exists(offline_file):
+                        batch_file = f"{offline_file}.batch-{os.getpid()}-{threading.get_ident()}-{time.time_ns()}"
+                        os.replace(offline_file, batch_file)
+                        batches.append(batch_file)
+
+                # queue_offline_report uses only offline_queue_lock, so it can
+                # append a new record while this batch waits on the server.
+                for batch_file in batches:
+                    self._retry_offline_batch(batch_file, offline_file)
         except Exception:
-            # Keep the queue for a later launch if local or network I/O fails.
+            # Leave any unprocessed batch available for the next client launch.
             return
 
     def save_state(self):
@@ -232,9 +302,10 @@ class OptirKioskApp:
                 "requiresStaffReview": True,
                 "reason": reason
             }
-            with open("unverified_sessions.jsonl", "a", encoding="utf-8") as f:
-                json.dump(record, f)
-                f.write("\n")
+            with offline_queue_lock():
+                with open("unverified_sessions.jsonl", "a", encoding="utf-8") as f:
+                    json.dump(record, f)
+                    f.write("\n")
             return True
         except Exception:
             return False
@@ -250,11 +321,12 @@ class OptirKioskApp:
                 "durationMinutes": float(data.get("durationMinutes", 0)),
                 "timestamp": timestamp
             }
-            with open("offline_sessions.jsonl", "a", encoding="utf-8") as f:
-                json.dump(queued, f)
-                f.write("\n")
-            with open("offline_logs.txt", "a", encoding="utf-8") as f:
-                f.write(f"[{timestamp}] User: {queued['username']} | Duration: {queued['durationMinutes']:.2f} mins | Pending server retry\n")
+            with offline_queue_lock():
+                with open("offline_sessions.jsonl", "a", encoding="utf-8") as f:
+                    json.dump(queued, f)
+                    f.write("\n")
+                with open("offline_logs.txt", "a", encoding="utf-8") as f:
+                    f.write(f"[{timestamp}] User: {queued['username']} | Duration: {queued['durationMinutes']:.2f} mins | Pending server retry\n")
             return True
         except Exception:
             return False

@@ -5,29 +5,6 @@ export async function POST(req) {
     try {
         const { username, password, durationMinutes } = await req.json();
 
-        // Admin Override
-        if (username === 'admin' && password === 'picssl2026') {
-            // Log Admin Access
-            await db.collection('access_logs').add({
-                username: 'Admin',
-                fullName: 'Administrator',
-                userType: 'admin',
-                durationMinutes: durationMinutes,
-                finalCost: 0,
-                timestamp: new Date().toISOString()
-            });
-
-            return NextResponse.json({
-                success: true,
-                message: 'Admin usage reported (No DB update)',
-                data: {
-                    actualDuration: durationMinutes,
-                    finalCost: 0
-                }
-            });
-        }
-
-
         if (!username || !password || durationMinutes === undefined) {
             return NextResponse.json({ success: false, message: 'Missing fields' }, { status: 400 });
         }

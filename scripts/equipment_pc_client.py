@@ -5,12 +5,64 @@ import time
 import threading
 import json
 import os
+import glob
+from contextlib import contextmanager
 
 import  ctypes
 
 # CONFIGURATION
 API_BASE_URL = "https://picssle-quipment--pic-equipment.us-east4.hosted.app/api/access"  # Update this to your deployed URL
 STATE_FILE = "optir_session_state.json"
+
+_OFFLINE_QUEUE_THREAD_LOCK = threading.Lock()
+_OFFLINE_SYNC_THREAD_LOCK = threading.Lock()
+
+
+@contextmanager
+def _offline_file_lock(lock_path, thread_lock):
+    """Serialize kiosk queue file operations across threads and processes."""
+    with thread_lock:
+        lock_file = open(lock_path, "a+b")
+        locked = False
+        try:
+            lock_file.seek(0, os.SEEK_END)
+            if lock_file.tell() == 0:
+                lock_file.write(b"\0")
+                lock_file.flush()
+            lock_file.seek(0)
+
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            locked = True
+            yield
+        finally:
+            if locked:
+                lock_file.seek(0)
+                if os.name == "nt":
+                    import msvcrt
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+                else:
+                    import fcntl
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            lock_file.close()
+
+
+@contextmanager
+def offline_queue_lock():
+    with _offline_file_lock("offline_sessions.lock", _OFFLINE_QUEUE_THREAD_LOCK):
+        yield
+
+
+@contextmanager
+def offline_sync_lock():
+    # Syncs serialize with each other, but queue writers use a different lock
+    # and remain free to append while this sync performs network requests.
+    with _offline_file_lock("offline_sessions.sync.lock", _OFFLINE_SYNC_THREAD_LOCK):
+        yield
 
 
 # SCREEN CONFIGURATION (Adjust for your specific monitors)
@@ -56,62 +108,93 @@ class OptirKioskApp:
         self.session_active = False
         self.fullname = ""
 
-        # Attempt to resume an interrupted session
-        if self.load_state():
-            self.start_session(self.fullname, restoring=True)
-        else:
-            self.setup_lock_screen()
+        # Saved sessions stay locked until the server verifies the reservation.
+        self.pending_restore = self.load_state()
+        self.setup_lock_screen()
+        if self.pending_restore:
+            self.root.after(500, self.restore_saved_session)
 
         # Start offline logs sync in the background
         threading.Thread(target=self.sync_offline_logs, daemon=True).start()
 
-    def sync_offline_logs(self):
-        """Attempts to send offline sessions to the server in the background"""
-        offline_file = "offline_sessions.jsonl"
-        if not os.path.exists(offline_file):
-            return
-            
+    def _retry_offline_batch(self, batch_file, offline_file):
         try:
-            with open(offline_file, "r") as f:
+            with open(batch_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()
-                
-            if not lines:
-                return
-                
-            remaining_lines = []
-            synced_count = 0
-            
-            for line in lines:
-                line = line.strip()
-                if not line:
+        except OSError:
+            return
+
+        remaining_lines = []
+        for line in lines:
+            try:
+                data = json.loads(line)
+                if not isinstance(data, dict):
+                    remaining_lines.append(line)
                     continue
+
+                if str(data.get("username", "")).lower() == "admin":
+                    if not self.record_unverified_session(data, "Legacy administrator session requires staff review"):
+                        remaining_lines.append(line)
+                    continue
+
+                response = requests.post(f"{API_BASE_URL}/report", json={
+                    "username": data.get("username"),
+                    "password": data.get("password"),
+                    "durationMinutes": data.get("durationMinutes")
+                }, timeout=10)
                 try:
-                    data = json.loads(line)
-                    response = requests.post(f"{API_BASE_URL}/report", json={
-                        "username": data.get("username"),
-                        "password": data.get("password"),
-                        "durationMinutes": data.get("durationMinutes")
-                    }, timeout=10)
-                    
-                    if response.ok:
-                        synced_count += 1
-                    else:
-                        remaining_lines.append(line + "\n")
-                except Exception as e:
-                    # If request completely fails (no internet), keep it
-                    remaining_lines.append(line + "\n")
-                    
-            if remaining_lines:
-                with open(offline_file, "w") as f:
-                    f.writelines(remaining_lines)
-            else:
-                os.remove(offline_file)
-                
-            if synced_count > 0:
-                print(f"Successfully synced {synced_count} offline sessions to server.")
-                
-        except Exception as e:
-            print(f"Error syncing offline logs: {e}")
+                    response_data = response.json()
+                except (ValueError, AttributeError):
+                    response_data = None
+
+                if response.ok and isinstance(response_data, dict) and response_data.get("success"):
+                    continue
+
+                terminal_rejection = (
+                    400 <= response.status_code < 500
+                    or (response.ok and isinstance(response_data, dict) and response_data.get("success") is False)
+                )
+                if terminal_rejection and self.record_unverified_session(
+                    data, "Queued report was rejected and needs staff review"
+                ):
+                    continue
+            except Exception:
+                # Preserve malformed records and reports whose request failed.
+                remaining_lines.append(line)
+                continue
+
+            remaining_lines.append(line)
+
+        try:
+            with offline_queue_lock():
+                if remaining_lines:
+                    with open(offline_file, "a", encoding="utf-8") as f:
+                        f.writelines(remaining_lines)
+                os.remove(batch_file)
+        except OSError:
+            # Keep the claimed batch if the pending rows could not be restored.
+            return
+
+    def sync_offline_logs(self):
+        """Retries claimed reports without holding the queue lock during network I/O."""
+        offline_file = "offline_sessions.jsonl"
+        try:
+            with offline_sync_lock():
+                with offline_queue_lock():
+                    # Recover a batch left behind by an interrupted earlier sync.
+                    batches = sorted(glob.glob(offline_file + ".batch-*"))
+                    if os.path.exists(offline_file):
+                        batch_file = f"{offline_file}.batch-{os.getpid()}-{threading.get_ident()}-{time.time_ns()}"
+                        os.replace(offline_file, batch_file)
+                        batches.append(batch_file)
+
+                # queue_offline_report uses only offline_queue_lock, so it can
+                # append a new record while this batch waits on the server.
+                for batch_file in batches:
+                    self._retry_offline_batch(batch_file, offline_file)
+        except Exception:
+            # Leave any unprocessed batch available for the next client launch.
+            return
 
     def save_state(self):
         """Persists the session to disk in case of reboot/crash"""
@@ -128,21 +211,125 @@ class OptirKioskApp:
             print(f"Error saving state: {e}")
 
     def load_state(self):
-        """Loads session from disk immediately on boot"""
-        if os.path.exists(STATE_FILE):
+        """Reads a saved session without unlocking the kiosk."""
+        if not os.path.exists(STATE_FILE):
+            return None
+        try:
+            with open(STATE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            self.clear_state()
+            return None
+
+        if not data.get("session_active"):
+            self.clear_state()
+            return None
+
+        username = str(data.get("username") or "")
+        if username.lower() == "admin":
+            if self.record_unverified_session(data, "Legacy administrator session was retired"):
+                self.clear_state()
+            return None
+
+        if not username or not data.get("password") or data.get("start_time") is None:
+            if self.record_unverified_session(data, "Incomplete saved session requires staff review"):
+                self.clear_state()
+            return None
+
+        return data
+
+    def restore_saved_session(self):
+        """Restores a reservation session only after the server verifies it."""
+        saved = self.pending_restore
+        if not saved or self.session_active:
+            return
+
+        try:
+            response = requests.post(f"{API_BASE_URL}/verify", json={
+                "username": saved.get("username"),
+                "password": saved.get("password")
+            }, timeout=10)
+        except requests.RequestException:
+            self.status_label.config(text="Previous session is locked until server verification is available.", fg="red")
+            self.root.after(30000, self.restore_saved_session)
+            return
+
+        if response.status_code >= 500:
+            self.status_label.config(text="Could not verify previous session. Retrying while the kiosk stays locked.", fg="red")
+            self.root.after(30000, self.restore_saved_session)
+            return
+
+        try:
+            result = response.json()
+        except ValueError:
+            result = {}
+
+        session_data = result.get("data") if isinstance(result, dict) else None
+        if response.ok and isinstance(result, dict) and result.get("success") and isinstance(session_data, dict):
             try:
-                with open(STATE_FILE, 'r') as f:
-                    data = json.load(f)
-                if data.get("session_active"):
-                    self.username = data.get("username", "")
-                    self.password = data.get("password", "")
-                    self.fullname = data.get("fullname", "Restored Session")
-                    self.start_time = data.get("start_time", time.time())
-                    self.session_active = True
-                    return True
-            except Exception as e:
-                print(f"Error loading state: {e}")
-        return False
+                self.username = str(saved["username"])
+                self.password = str(saved["password"])
+                self.fullname = session_data.get("fullName") or saved.get("fullname") or "Restored Session"
+                self.start_time = float(saved["start_time"])
+            except (KeyError, TypeError, ValueError):
+                session_data = None
+            else:
+                self.pending_restore = None
+                self.session_active = True
+                self.start_session(self.fullname, restoring=True)
+                return
+
+        if self.record_unverified_session(saved, "Saved session could not be verified and requires staff review"):
+            self.clear_state()
+            self.pending_restore = None
+            self.status_label.config(text="Previous session needs staff review. Enter a current reservation to continue.", fg="red")
+        else:
+            self.status_label.config(text="Previous session needs staff review; local record could not be saved. Contact staff.", fg="red")
+            self.root.after(30000, self.restore_saved_session)
+
+    def record_unverified_session(self, data, reason):
+        try:
+            start_time = data.get("start_time")
+            duration = data.get("durationMinutes")
+            if duration is None and start_time is not None:
+                duration = max(0, (time.time() - float(start_time)) / 60)
+            record = {
+                "username": str(data.get("username") or "unknown"),
+                "fullName": str(data.get("fullname") or data.get("fullName") or ""),
+                "startedAt": start_time,
+                "reportedDurationMinutes": float(duration) if duration is not None else None,
+                "recordedAt": time.time(),
+                "requiresStaffReview": True,
+                "reason": reason
+            }
+            with offline_queue_lock():
+                with open("unverified_sessions.jsonl", "a", encoding="utf-8") as f:
+                    json.dump(record, f)
+                    f.write("\n")
+            return True
+        except Exception:
+            return False
+
+    def queue_offline_report(self, data):
+        try:
+            timestamp = data.get("timestamp") or time.strftime("%Y-%m-%d %H:%M:%S")
+            queued = {
+                "username": data.get("username"),
+                "password": data.get("password"),
+                "fullname": data.get("fullname", ""),
+                "start_time": data.get("start_time"),
+                "durationMinutes": float(data.get("durationMinutes", 0)),
+                "timestamp": timestamp
+            }
+            with offline_queue_lock():
+                with open("offline_sessions.jsonl", "a", encoding="utf-8") as f:
+                    json.dump(queued, f)
+                    f.write("\n")
+                with open("offline_logs.txt", "a", encoding="utf-8") as f:
+                    f.write(f"[{timestamp}] User: {queued['username']} | Duration: {queued['durationMinutes']:.2f} mins | Pending server retry\n")
+            return True
+        except Exception:
+            return False
 
     def clear_state(self):
         """Removes the persistent state file on legitimate logout"""
@@ -302,29 +489,28 @@ class OptirKioskApp:
         self.root.update()
 
         try:
-            response = requests.post(f"{API_BASE_URL}/verify", json={"username": user, "password": pwd}, timeout=10) # Added timeout
+            response = requests.post(f"{API_BASE_URL}/verify", json={"username": user, "password": pwd}, timeout=10)
             data = response.json()
-
-            if data.get("success"):
-                if "data" in data:
-                    self.username = user
-                    self.password = pwd
-                    self.start_session(data['data']['fullName'])
-                else:
-                    self.status_label.config(text="Error: Missing session data", fg="red")
+            if response.ok and data.get("success") and isinstance(data.get("data"), dict):
+                saved = self.pending_restore
+                restoring = bool(saved and saved.get("username") == user and saved.get("password") == pwd)
+                if saved and not restoring:
+                    if not self.record_unverified_session(saved, "Prior saved session was replaced by a new verified login"):
+                        self.status_label.config(text="Previous session needs staff review; contact staff before continuing.", fg="red")
+                        return
+                    self.clear_state()
+                self.pending_restore = None
+                self.username = user
+                self.password = pwd
+                self.fullname = data["data"]["fullName"]
+                if restoring:
+                    self.start_time = float(saved["start_time"])
+                    self.session_active = True
+                self.start_session(self.fullname, restoring=restoring)
             else:
                 self.status_label.config(text=data.get("message", "Login Failed"), fg="red")
-        
-        except Exception as e:
-            # OFFLINE SAFETY: Check for Admin Override
-            if user == "admin" and pwd == "picssl2026":
-                self.username = "admin"
-                self.password = "picssl2026"
-                self.start_session("Offline Admin")
-                messagebox.showwarning("Offline Mode", "Network unavailable. Logged in as Admin (Offline).")
-                return
-
-            self.status_label.config(text=f"Network Error: {str(e)}", fg="red")
+        except Exception:
+            self.status_label.config(text="Network Error: server verification failed", fg="red")
 
     def start_session(self, fullname, restoring=False):
         self.fullname = fullname
@@ -377,51 +563,61 @@ class OptirKioskApp:
 
 
     def logout(self):
-        self.session_active = False
         end_time = time.time()
-        duration_mins = (end_time - self.start_time) / 60
-        
-        # Report to API
-        report_success = False
+        duration_mins = max(0, (end_time - self.start_time) / 60)
+        report = {
+            "username": self.username,
+            "password": self.password,
+            "fullname": self.fullname,
+            "start_time": self.start_time,
+            "durationMinutes": duration_mins,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        needs_review = False
+        queued_locally = False
         try:
             response = requests.post(f"{API_BASE_URL}/report", json={
-                "username": self.username,
-                "password": self.password,
+                "username": report["username"],
+                "password": report["password"],
                 "durationMinutes": duration_mins
             }, timeout=10)
-            if response.ok:
-                 report_success = True
-        except Exception as e:
-            # OFFLINE SAFETY: Save to local file
             try:
-                timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-                with open("offline_logs.txt", "a") as f:
-                    f.write(f"[{timestamp}] User: {self.username} | Duration: {duration_mins:.2f} mins | Error: {str(e)}\n")
-                
-                # Save structured data for auto-retry
-                with open("offline_sessions.jsonl", "a") as f:
-                    json.dump({
-                        "username": self.username,
-                        "password": self.password,
-                        "durationMinutes": duration_mins,
-                        "timestamp": timestamp
-                    }, f)
-                    f.write("\n")
-                    
-                messagebox.showerror("Offline Report", "Network failed. Usage saved locally to 'offline_logs.txt'.")
-                report_success = True # Consider successfully saved offline
-            except:
-                pass 
-                
-        if report_success:
-             self.clear_state() # Unlink the persistence file now that time is accounted for
-        
-        # Reset memory state
+                result = response.json()
+            except ValueError:
+                result = {}
+
+            if response.ok and isinstance(result, dict) and result.get("success"):
+                handled = True
+            elif 400 <= response.status_code < 500 or (response.ok and isinstance(result, dict) and result.get("success") is False):
+                handled = self.record_unverified_session(report, "Usage report was rejected and requires staff review")
+                needs_review = handled
+            else:
+                handled = self.queue_offline_report(report)
+                queued_locally = handled
+        except requests.RequestException:
+            handled = self.queue_offline_report(report)
+            queued_locally = handled
+
+        if not handled:
+            self.session_active = True
+            messagebox.showerror("Usage Not Saved", "The usage report could not be saved locally or by the server. Keep this session open and contact lab staff.")
+            return
+
+        if needs_review:
+            messagebox.showwarning("Usage Needs Review", "The server rejected this usage report. A local record was saved for staff reconciliation.")
+        elif queued_locally:
+            messagebox.showwarning("Usage Saved Locally", "The report is queued for server retry when the client next starts online.")
+
+        # Once the report is stored or accepted, retire the session locally so a
+        # rejected report cannot be replayed by restoring the saved kiosk state.
+        self.session_active = False
+        self.pending_restore = None
+        self.clear_state()
         self.username = ""
         self.password = ""
         self.fullname = ""
-        
-        # Re-lock
+        self.start_time = 0
         self.setup_lock_screen()
 
 if __name__ == "__main__":

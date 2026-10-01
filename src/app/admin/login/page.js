@@ -22,9 +22,12 @@ export default function LoginPage() {
             body: JSON.stringify({ username, password }),
         });
 
+        const result = await res.json().catch(() => ({}));
         if (res.ok) {
             router.push('/admin');
             router.refresh(); // Refresh to update server components
+        } else if (res.status === 503 && result.code === 'ADMIN_LOGIN_NOT_CONFIGURED') {
+            setError('Admin login is not configured. Contact the system administrator.');
         } else {
             setError('Invalid username or password');
         }

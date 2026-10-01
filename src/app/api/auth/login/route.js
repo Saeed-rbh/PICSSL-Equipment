@@ -1,22 +1,37 @@
 import { NextResponse } from 'next/server';
+import {
+    ADMIN_SESSION_COOKIE,
+    ADMIN_SESSION_TTL_SECONDS,
+    constantTimeEquals,
+    createAdminSessionToken,
+    isAdminPasswordConfigured,
+} from '@/lib/adminSecurity.mjs';
 
 export async function POST(request) {
-    const body = await request.json();
-    const { username, password } = body;
+    const body = await request.json().catch(() => ({}));
+    const { username, password } = body ?? {};
+    const configuredPassword = process.env.ADMIN_PASSWORD;
 
-    // Hardcoded credentials (could use env vars)
-    if (username === 'admin' && password === 'picssl2026') {
+    if (!isAdminPasswordConfigured(configuredPassword)) {
+        return NextResponse.json(
+            {
+                success: false,
+                code: 'ADMIN_LOGIN_NOT_CONFIGURED',
+                message: 'Admin login is not configured',
+            },
+            { status: 503 }
+        );
+    }
+
+    if (username === 'admin' && constantTimeEquals(password, configuredPassword)) {
         const response = NextResponse.json({ success: true });
-
-        // Set HTTP-only cookie
-        response.cookies.set('admin_session', 'true', {
+        response.cookies.set(ADMIN_SESSION_COOKIE, createAdminSessionToken(configuredPassword), {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 60 * 60 * 24, // 1 day
+            maxAge: ADMIN_SESSION_TTL_SECONDS,
             path: '/',
         });
-
         return response;
     }
 

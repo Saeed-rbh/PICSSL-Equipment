@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
+import { isAdminAuthenticated } from '@/lib/adminAuth.mjs';
 
 export async function POST() {
+    if (!(await isAdminAuthenticated())) {
+        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
     try {
         const collectionRef = db.collection('access_logs');
         const snapshot = await collectionRef.get();

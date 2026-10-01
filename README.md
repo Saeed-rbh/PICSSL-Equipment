@@ -55,8 +55,9 @@ A complete solution for managing lab equipment access, tracking usage, and billi
 ### Dashboard Access
 - Log in to `/admin` using the deployment-configured administrator password.
 - Set a new `ADMIN_PASSWORD` yourself as the Firebase App Hosting `admin-password` secret; it must be at least 16 characters. Revoke the previously exposed SMTP app password with its provider, then configure replacement account credentials as the `smtp-user` and `smtp-pass` secrets referenced in `apphosting.yaml`. Follow the [Firebase App Hosting secret configuration guide](https://firebase.google.com/docs/app-hosting/configure#store-and-access-secret-parameters). Secret values must stay out of source files and version control.
+- Exports require an authenticated admin session; the old query-parameter credential is no longer accepted by the updated endpoint.
 - Review the backend's console environment overrides before rollout and remove any stale credential values there. Confirm the backend's live branch and automatic rollout setting in Firebase Console; do not assume a source change has reached production.
-- At a planned maintenance window, replace the kiosk client on each equipment PC with the updated version. It requires online reservation verification and retires legacy shared-administrator session records for staff review. Keep the lab's equipment-access procedure available while clients and server are updated.
+- At a planned maintenance window, deploy the updated server and replace the kiosk client on each equipment PC. The server rollout invalidates the old export query credential; the client requires online reservation verification and retires legacy shared-administrator session records for staff review. Verify the old login and export paths are rejected, and keep the lab's equipment-access procedure available while clients and server are updated.
 
 ### Managing Logs
 - **View History**: Click "View" on any reservation to see a specific breakdown of its session history.

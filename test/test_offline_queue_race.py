@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import threading
+import time
 import types
 import unittest
 from importlib.machinery import SourceFileLoader
@@ -67,20 +68,16 @@ class OfflineQueueRaceTest(unittest.TestCase):
                             "password": "test-only-old-password",
                             "durationMinutes": 12,
                         }
-                        new_report = {
-                            "username": "logout-reservation",
-                            "password": "test-only-new-password",
-                            "fullname": "Test User",
-                            "durationMinutes": 4,
-                        }
                         Path("offline_sessions.jsonl").write_text(
                             json.dumps(old_report) + "\n", encoding="utf-8"
                         )
 
                         request_started = threading.Event()
                         allow_request_to_finish = threading.Event()
-                        append_finished = threading.Event()
-                        append_result = []
+                        logout_finished = threading.Event()
+                        logout_errors = []
+                        request_count = 0
+                        request_count_lock = threading.Lock()
 
                         class Response:
                             def __init__(self):
@@ -92,42 +89,73 @@ class OfflineQueueRaceTest(unittest.TestCase):
                                 return {"success": outcome == "accepted"}
 
                         old_post = module.requests.post
+                        old_warning = getattr(module.messagebox, "showwarning", None)
+                        old_error = getattr(module.messagebox, "showerror", None)
 
                         def blocked_post(*args, **kwargs):
-                            request_started.set()
-                            if not allow_request_to_finish.wait(timeout=5):
-                                raise TimeoutError("test did not release the simulated request")
-                            return Response()
+                            nonlocal request_count
+                            with request_count_lock:
+                                request_count += 1
+                                current_request = request_count
+                            if current_request == 1:
+                                request_started.set()
+                                if not allow_request_to_finish.wait(timeout=5):
+                                    raise TimeoutError("test did not release the simulated request")
+                                return Response()
+                            raise module.requests.RequestException("simulated offline logout")
 
                         module.requests.post = blocked_post
+                        module.messagebox.showwarning = lambda *args, **kwargs: None
+                        module.messagebox.showerror = lambda *args, **kwargs: None
                         app = module.OptirKioskApp.__new__(module.OptirKioskApp)
+                        app.username = "logout-reservation"
+                        app.password = "test-only-new-password"
+                        app.fullname = "Test User"
+                        app.start_time = time.time() - 240
+                        app.session_active = True
+                        app.setup_lock_screen = lambda: None
+                        if name == "kiosk_py":
+                            app.pending_restore = None
                         sync_thread = threading.Thread(target=app.sync_offline_logs)
-                        append_thread = None
+                        logout_thread = None
                         sync_thread.start()
 
                         try:
                             self.assertTrue(request_started.wait(timeout=2), "sync did not start its request")
 
-                            def append_logout_report():
-                                append_result.append(app.queue_offline_report(new_report))
-                                append_finished.set()
+                            def logout_session():
+                                try:
+                                    app.logout()
+                                except Exception as error:
+                                    logout_errors.append(error)
+                                finally:
+                                    logout_finished.set()
 
-                            append_thread = threading.Thread(target=append_logout_report)
-                            append_thread.start()
+                            logout_thread = threading.Thread(target=logout_session)
+                            logout_thread.start()
                             self.assertTrue(
-                                append_finished.wait(timeout=2),
+                                logout_finished.wait(timeout=2),
                                 "logout append was blocked by the in-flight network request",
                             )
-                            self.assertEqual(append_result, [True])
+                            self.assertEqual(logout_errors, [])
+                            self.assertFalse(app.session_active, "logout did not retire its session")
                         finally:
                             allow_request_to_finish.set()
                             sync_thread.join(timeout=5)
-                            if append_thread is not None:
-                                append_thread.join(timeout=5)
+                            if logout_thread is not None:
+                                logout_thread.join(timeout=5)
                             module.requests.post = old_post
+                            if old_warning is None:
+                                delattr(module.messagebox, "showwarning")
+                            else:
+                                module.messagebox.showwarning = old_warning
+                            if old_error is None:
+                                delattr(module.messagebox, "showerror")
+                            else:
+                                module.messagebox.showerror = old_error
 
                         self.assertFalse(sync_thread.is_alive(), "sync did not finish")
-                        self.assertFalse(append_thread.is_alive(), "logout append did not finish")
+                        self.assertFalse(logout_thread.is_alive(), "logout did not finish")
                         remaining = [
                             json.loads(line)
                             for line in Path("offline_sessions.jsonl").read_text(encoding="utf-8").splitlines()
